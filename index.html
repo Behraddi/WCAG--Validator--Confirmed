@@ -182,6 +182,9 @@
     .sug-title{font-size:11px;font-weight:800;color:var(--primaryL);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
     .sug-text{font-size:13px;color:var(--text2);line-height:1.65}
 
+
+    .grade-note{background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-left:3px solid var(--primary);border-radius:var(--rs);padding:11px 16px;font-size:12.5px;color:var(--text2);margin-bottom:18px;line-height:1.65}
+    .grade-note strong{color:var(--primaryL)}
     .why-box{background:var(--surface2);border-radius:var(--rs);padding:11px 14px;margin-top:10px;font-size:13px;color:var(--text2);line-height:1.6}
     .why-title{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
 
@@ -478,6 +481,14 @@
     <div id="overall-mark"></div>
     <div class="sum-grid" id="sum-grid"></div>
 
+
+    <div class="grade-note">
+      <strong>📋 DESN2005 Assessment Note:</strong>
+      Reaching <strong>100%</strong> is <em>not</em> mandatory for your assignments in <strong>DESN2005 – Graphic Design: Interactive Digital Media</strong>.
+      This tool is a <strong>guide to help you identify and address accessibility issues</strong> in your designs —
+      use the results to improve your work, not to aim for a perfect automated score.
+      Manual review and good design judgment always matter more than a numerical result.
+    </div>
     <div class="filters">
       <span class="fl">Show:</span>
       <button class="flt active" onclick="filter('all',this)">All</button>
@@ -1259,11 +1270,16 @@ function renderSummary(issues) {
     <div class="sum-card"><div class="sum-num" style="color:var(--text2);font-size:22px">${_meta.nodeCount||0}</div><div class="sum-lbl">Elements Checked</div></div>`;
 }
 
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function issueCard(iss, idx) {
   const cr  = WCAG[iss.criterion] || {};
   const sev = iss.manualReview ? 'manual' : iss.severity;
   const ico = {error:'🔴',warning:'🟡',info:'🔵',manual:'⚪'}[sev]||'⚪';
-  const pathStr = (iss.path||[]).join(' › ');
+  const pathStr = esc((iss.path||[]).join(' › '));
 
   const slug = WCAG_SLUG[iss.criterion] || '';
   const wcagLink = slug
@@ -1306,7 +1322,7 @@ function issueCard(iss, idx) {
         <div class="sc-label">Frame Screenshot — failing element highlighted in red</div>
         <div class="sc-frame loading" id="scf-${idx}">
           <img src="${imgUrl}"
-               alt="Screenshot of ${iss.elementName.replace(/"/g,'&quot;')}"
+               alt="Screenshot of ${esc(iss.elementName)}"
                loading="lazy"
                onload="document.getElementById('scf-${idx}').classList.remove('loading')"
                onerror="document.getElementById('scf-${idx}').className='sc-frame error-img';document.getElementById('scf-${idx}').textContent='Screenshot unavailable'">
@@ -1327,7 +1343,7 @@ function issueCard(iss, idx) {
             <span class="badge b-${cr.level||'A'}">${cr.level||'A'}</span>
             <span class="badge b-${sev}">${sev.charAt(0).toUpperCase()+sev.slice(1)}</span>
           </div>
-          <div class="ic-desc">${iss.description}</div>
+          <div class="ic-desc">${esc(iss.description)}</div>
           ${pathStr?`<div class="ic-path" title="${pathStr}">${pathStr}</div>`:''}
         </div>
         <div class="ic-tog">▼</div>
@@ -1336,9 +1352,9 @@ function issueCard(iss, idx) {
         ${gridHtml}
         <div class="sug-box">
           <div class="sug-title">💡 Suggested Fix</div>
-          <div class="sug-text">${iss.suggestion}</div>
+          <div class="sug-text">${esc(iss.suggestion)}</div>
         </div>
-        ${cr.why?`<div class="why-box"><div class="why-title">Why This Matters</div>${cr.why}</div>`:''}
+        ${cr.why?`<div class="why-box"><div class="why-title">Why This Matters</div>${esc(cr.why)}</div>`:''}
         ${screenshotHtml}
         ${iss.htmlSnippet ? `<div class="html-snip-wrap"><div class="html-snip-lbl">HTML Element</div><div class="html-snip"><code>${iss.htmlSnippet.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></div></div>` : ''}
         <a class="ic-link" href="${wcagLink}" target="_blank" rel="noopener">
@@ -1570,7 +1586,7 @@ function issueBlockHTML(iss, num) {
   const wcagUrl = slug
     ? `https://www.w3.org/WAI/WCAG22/Understanding/${slug}.html`
     : 'https://www.w3.org/TR/WCAG22/';
-  const pathStr = (iss.path||[]).join(' › ');
+  const pathStr = esc((iss.path||[]).join(' › '));
   const d = iss.details || {};
   const sev = iss.manualReview ? 'manual' : iss.severity;
 
@@ -1604,7 +1620,7 @@ function issueBlockHTML(iss, num) {
   const scHtml = imgUrl
     ? `<div class="sc-section">
         <div class="sc-lbl">Element Screenshot (direct reference from Figma)</div>
-        <img class="sc-img" src="${imgUrl}" alt="Screenshot of ${iss.elementName.replace(/"/g,'&quot;')}">
+        <img class="sc-img" src="${imgUrl}" alt="Screenshot of ${esc(iss.elementName)}">
       </div>`
     : '';
 
@@ -1623,14 +1639,14 @@ function issueBlockHTML(iss, num) {
     </div>
     <div class="issue-body">
       ${pathStr?`<div class="issue-path">📍 ${pathStr}</div>`:''}
-      <div class="issue-desc">${iss.description}</div>
+      <div class="issue-desc">${esc(iss.description)}</div>
       ${detHtml}
       ${colHtml}
       <div class="fix-box">
         <div class="fix-lbl">💡 Suggested Fix</div>
-        <div class="fix-text">${iss.suggestion}</div>
+        <div class="fix-text">${esc(iss.suggestion)}</div>
       </div>
-      ${cr.why?`<div class="why-box"><div class="why-lbl">Why This Matters</div><div>${cr.why}</div></div>`:''}
+      ${cr.why?`<div class="why-box"><div class="why-lbl">Why This Matters</div><div>${esc(cr.why)}</div></div>`:''}
       ${scHtml}
       <div class="ref-line">WCAG 2.2 Reference: <em>${wcagUrl}</em></div>
     </div>
