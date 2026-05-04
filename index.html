@@ -429,7 +429,9 @@
         <button class="btn btn-primary btn-full" onclick="runWebAnalysis()">Analyze Website</button>
         <div class="hint">
           <strong>What gets checked:</strong> image alt text, form labels, heading structure, link text, page title &amp; language, button names, duplicate IDs, iframe titles, autoplay media, table headers, and more — all against WCAG 2.2.<br><br>
-          ⚠️ <strong>Limitations:</strong> JavaScript-rendered content (React, Vue, Angular SPAs) may not be fully visible in the fetched HTML. Color contrast from CSS stylesheets cannot be checked without running the page. For full SPA coverage, combine this tool with the axe DevTools browser extension.
+          ✅ <strong>Works well with:</strong> student projects, small business sites, university pages (e.g. <em>library.westernsydney.edu.au</em>), and any publicly-deployed site without bot protection.<br><br>
+          ⚠️ <strong>Will not work with:</strong> BBC, CNN, NYT, social media, and any site protected by Cloudflare or bot-detection — these services actively block automated proxy requests. Use the axe DevTools browser extension for those sites instead.<br><br>
+          ℹ️ <strong>Other limitations:</strong> JavaScript-rendered content (React/Vue/Angular SPAs) and CSS-only colour contrast cannot be checked without a real browser render.
         </div>
       </div>
     </div>
@@ -2000,21 +2002,57 @@ function switchMode(mode) {
 }
 
 async function fetchWebPage(url) {
+  // Heuristic: block pages returned by bot-protection / CDN proxies
+  const isBlockPage = html => {
+    const preview = html.slice(0, 3000).toLowerCase();
+    return /just a moment|checking your browser|cloudflare ray id|enable javascript and cookies|access denied|403 forbidden|bot detected|captcha|ddos protection|attention required/i.test(preview);
+  };
+
+  const tryProxy = async (proxyUrl) => {
+    const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(20000) });
+    if (!r.ok) throw new Error(`HTTP ${r.status} from proxy`);
+    const html = await r.text();
+    if (!html || html.trim().length < 200) throw new Error('Empty response from proxy');
+    if (isBlockPage(html)) throw new Error('Site returned a bot-protection / access-denied page');
+    return html;
+  };
+
   const proxies = [
-    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(url)}`,
   ];
-  let lastErr;
-  for (const proxy of proxies) {
-    try {
-      const r = await fetch(proxy(url), { signal: AbortSignal.timeout(15000) });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const html = await r.text();
-      if (!html || html.trim().length < 100) throw new Error('Empty response');
-      return html;
-    } catch(e) { lastErr = e; }
+
+  // Race all proxies — return the first one that succeeds
+  try {
+    return await Promise.any(proxies.map(tryProxy));
+  } catch (e) {
+    const isAggregate = e instanceof AggregateError;
+    const reasons = isAggregate
+      ? [...new Set(e.errors.map(err => err.message))].join(' | ')
+      : (e.message || '');
+
+    const isTimeout   = /timed? ?out|signal|timeout/i.test(reasons);
+    const isBlocked   = /bot.protect|access.denied|403|blocked/i.test(reasons);
+
+    let hint;
+    if (isBlocked || isTimeout) {
+      hint =
+        'This site actively blocks automated proxy requests (common with BBC, CNN, NYT, social media, and Cloudflare-protected sites).\n\n' +
+        'Suggestions:\n' +
+        '• Try a different site — e.g. a student project, small business, or university page\n' +
+        '• The WSU Library works well:  library.westernsydney.edu.au\n' +
+        '• Your own assignment live URL (if publicly deployed)\n\n' +
+        'Technical note: This tool fetches pages through free CORS proxies. Major websites often detect and block these proxy services.';
+    } else {
+      hint =
+        'Make sure the URL is publicly accessible and starts with https://\n\n' +
+        'If the site loads fine in your browser but fails here, it may be blocking automated access.';
+    }
+
+    throw new Error(`Could not fetch "${url}".\n\n${hint}`);
   }
-  throw new Error(`Could not fetch the page. ${lastErr?.message || ''}\n\nMake sure the URL is publicly accessible and try again.`);
 }
 
 const WebCheck = {
