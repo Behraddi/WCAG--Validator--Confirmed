@@ -191,10 +191,14 @@
     /* ── SCREENSHOT ── */
     .sc-wrap{margin-top:14px}
     .sc-label{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
-    .sc-frame{border:1px solid var(--border);border-radius:var(--rs);overflow:hidden;background:#fff;position:relative;max-height:280px;display:flex;align-items:center;justify-content:center}
-    .sc-frame img{display:block;width:100%;max-height:280px;object-fit:contain}
+    .sc-frame{border:1px solid var(--border);border-radius:var(--rs);overflow:hidden;background:#fff;position:relative}
+    .sc-frame img{display:block;width:100%;height:auto}
+    .sc-frame.loading img{opacity:0}
     .sc-frame.loading::after{content:'Loading screenshot…';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text3);background:var(--surface2)}
-    .sc-frame.error-img{background:var(--surface2);padding:20px;justify-content:center;font-size:12px;color:var(--text3);min-height:60px}
+    .sc-frame.error-img{background:var(--surface2);padding:20px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text3);min-height:60px}
+    /* Red highlight box overlaid on the screenshot */
+    .sc-highlight{position:absolute;border:2px solid #ef4444;background:rgba(239,68,68,.15);pointer-events:none;box-shadow:0 0 0 2px rgba(239,68,68,.35),0 0 12px rgba(239,68,68,.25);border-radius:2px}
+    .sc-highlight::before{content:'';position:absolute;inset:-6px;border:1px dashed rgba(239,68,68,.6);border-radius:4px}
     .sc-zoom{display:inline-block;margin-top:6px;font-size:11px;color:var(--primaryL);text-decoration:none;cursor:pointer}
     .sc-zoom:hover{text-decoration:underline}
 
@@ -792,23 +796,32 @@ const Check = {
     const fgHex = C.toHex(blended);
     const bgHex = C.toHex(bg);
 
+    // The actual words on screen — shown verbatim so there is no ambiguity about
+    // which text element is failing. Truncated at 80 chars to keep the UI tidy.
+    const chars = node.characters || '';
+    const textSnippet = chars.length
+      ? `"${chars.length > 80 ? chars.slice(0,80)+'…' : chars}"`
+      : `(layer: "${node.name}")`;
+
     if(ratio < aaMin && (lvl==='AA'||lvl==='AAA')) {
       const sug = C.suggest(blended, bgLum, aaMin);
       issues.push({
         criterion:'1.4.3', severity:'error', path,
         elementName: node.name,
-        description: `Text contrast ratio is ${ratio.toFixed(2)}:1 — minimum required is ${aaMin}:1 for ${large?'large':'normal'} text`,
+        textContent: chars,
+        description: `${textSnippet} — contrast ${ratio.toFixed(2)}:1 is below the ${aaMin}:1 minimum for ${large?'large':'normal'} text`,
         suggestion: sug
           ? `Change the text color from ${fgHex} to ${sug}. This preserves the hue while achieving the required ${aaMin}:1 contrast ratio.`
           : `The combination of text color ${fgHex} on background ${bgHex} is too low contrast. Significantly darken the text (or lighten the background) to reach ${aaMin}:1.`,
-        details: { current:`${ratio.toFixed(2)}:1`, required:`${aaMin}:1`, textColor:fgHex, bgColor:bgHex, suggestedColor:sug, fontSize:`${fs}px`, isLargeText:large },
+        details: { current:`${ratio.toFixed(2)}:1`, required:`${aaMin}:1`, textColor:fgHex, bgColor:bgHex, suggestedColor:sug, fontSize:`${fs}px` },
       });
     } else if(ratio >= aaMin && ratio < aaaMin && lvl==='AAA') {
       const sug = C.suggest(blended, bgLum, aaaMin);
       issues.push({
         criterion:'1.4.6', severity:'warning', path,
         elementName: node.name,
-        description: `Contrast ${ratio.toFixed(2)}:1 passes AA but fails AAA (needs ${aaaMin}:1)`,
+        textContent: chars,
+        description: `${textSnippet} — contrast ${ratio.toFixed(2)}:1 passes AA but fails AAA (needs ${aaaMin}:1)`,
         suggestion: sug
           ? `For AAA compliance, change text color to ${sug} to reach ${aaaMin}:1 contrast.`
           : `Increase contrast to ${aaaMin}:1 for AAA-level compliance.`,
@@ -820,15 +833,19 @@ const Check = {
 
   textSize(node, path) {
     const fs = (node.style||{}).fontSize||16;
+    const chars = node.characters || '';
+    const snippet = chars.length
+      ? `"${chars.length > 60 ? chars.slice(0,60)+'…' : chars}"`
+      : `(layer: "${node.name}")`;
     if(fs < 11) return [{
-      criterion:'1.4.4', severity:'error', path, elementName:node.name,
-      description:`Font size is ${fs}px — genuinely illegible for most users`,
+      criterion:'1.4.4', severity:'error', path, elementName:node.name, textContent:chars,
+      description:`${snippet} — font size ${fs}px is genuinely illegible for most users`,
       suggestion:`Increase to at least 12px. Text under 11px cannot be comfortably read even with browser zoom, and browsers may not zoom it proportionally.`,
       details:{current:`${fs}px`, recommended:'16px for body text'},
     }];
     if(fs < 14) return [{
-      criterion:'1.4.4', severity:'warning', path, elementName:node.name,
-      description:`Font size is ${fs}px — small text may be hard to read for users with low vision`,
+      criterion:'1.4.4', severity:'warning', path, elementName:node.name, textContent:chars,
+      description:`${snippet} — font size ${fs}px may be too small for users with low vision`,
       suggestion:`Consider increasing to 14–16px for body text. Captions and labels can use 12px if necessary, but anything under 14px reduces readability for older users and those with low vision.`,
       details:{current:`${fs}px`, recommended:'16px for body text'},
     }];
@@ -943,7 +960,7 @@ function analyzeDocument(fileData) {
   let nodeCount = 0;
   const WHITE = {r:255,g:255,b:255,a:1};
 
-  function walk(node, bg, pathArr, depth, frameId) {
+  function walk(node, bg, pathArr, depth, frameId, frameBounds) {
     if(depth > 40) return;
     nodeCount++;
     const path = [...pathArr, node.name];
@@ -998,14 +1015,20 @@ function analyzeDocument(fileData) {
     // ── COLOR-ONLY INDICATORS ──
     nodeIssues.push(...Check.colorOnly(node, path));
 
-    // Tag every issue with the TOP-LEVEL FRAME id so screenshots capture
-    // the whole artboard rather than an isolated element crop.
-    nodeIssues.forEach(i => { i.nodeId = frameId; });
+    // Tag every issue with:
+    //   nodeId        → top-level FRAME id  (screenshot shows the whole artboard)
+    //   elementBounds → this node's bounding box  (drives the red highlight overlay)
+    //   frameBounds   → the frame's bounding box  (used to compute relative coords)
+    nodeIssues.forEach(i => {
+      i.nodeId        = frameId;
+      i.elementBounds = node.absoluteBoundingBox || null;
+      i.frameBounds   = frameBounds || null;
+    });
     issues.push(...nodeIssues);
 
     if(node.children) {
       for(const child of node.children) {
-        walk(child, myBg || bg, path, depth + 1, frameId);
+        walk(child, myBg || bg, path, depth + 1, frameId, frameBounds);
       }
     }
   }
@@ -1029,7 +1052,7 @@ function analyzeDocument(fileData) {
         // This ensures contrast checks inside dark-themed frames use the correct
         // background colour, not a hard-coded white fallback.
         const frameBg = Figma.effectiveBg(topNode, pageBg);
-        walk(topNode, frameBg || pageBg, [page.name], 1, topNode.id);
+        walk(topNode, frameBg || pageBg, [page.name], 1, topNode.id, topNode.absoluteBoundingBox || null);
       }
     }
   }
@@ -1162,6 +1185,8 @@ function issueCard(iss, idx) {
   // Build detail cells
   const d = iss.details || {};
   const cells = [];
+  // Show the exact failing text first so it is unambiguous
+  if(iss.textContent) cells.push(detCell('Failing Text', `"${iss.textContent.length > 80 ? iss.textContent.slice(0,80)+'…' : iss.textContent}"`, 'fail'));
   if(d.current)        cells.push(detCell('Current Value', d.current, 'fail'));
   if(d.required)       cells.push(detCell('Required', d.required, 'pass'));
   if(d.recommended)    cells.push(detCell('Recommended', d.recommended, ''));
@@ -1176,15 +1201,28 @@ function issueCard(iss, idx) {
     : '';
 
   const imgUrl = iss.nodeId ? _screenshots[iss.nodeId] : null;
+
+  // Compute red highlight box position as % of the frame image
+  let highlightHtml = '';
+  const eb = iss.elementBounds, fb = iss.frameBounds;
+  if(eb && fb && fb.width > 0 && fb.height > 0) {
+    const rx = Math.max(0, ((eb.x - fb.x) / fb.width) * 100);
+    const ry = Math.max(0, ((eb.y - fb.y) / fb.height) * 100);
+    const rw = Math.min(100 - rx, (eb.width  / fb.width)  * 100);
+    const rh = Math.min(100 - ry, (eb.height / fb.height) * 100);
+    highlightHtml = `<div class="sc-highlight" style="left:${rx.toFixed(3)}%;top:${ry.toFixed(3)}%;width:${rw.toFixed(3)}%;height:${rh.toFixed(3)}%"></div>`;
+  }
+
   const screenshotHtml = imgUrl
     ? `<div class="sc-wrap">
-        <div class="sc-label">Element Screenshot</div>
-        <div class="sc-frame" id="scf-${idx}">
+        <div class="sc-label">Frame Screenshot — failing element highlighted in red</div>
+        <div class="sc-frame loading" id="scf-${idx}">
           <img src="${imgUrl}"
                alt="Screenshot of ${iss.elementName.replace(/"/g,'&quot;')}"
                loading="lazy"
                onload="document.getElementById('scf-${idx}').classList.remove('loading')"
                onerror="document.getElementById('scf-${idx}').className='sc-frame error-img';document.getElementById('scf-${idx}').textContent='Screenshot unavailable'">
+          ${highlightHtml}
         </div>
         <a class="sc-zoom" href="${imgUrl}" target="_blank" rel="noopener">Open full-size ↗</a>
       </div>`
