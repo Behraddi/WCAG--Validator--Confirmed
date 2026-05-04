@@ -228,6 +228,18 @@
     .empty-ic{font-size:44px;margin-bottom:10px}
     .empty-t{font-size:19px;font-weight:700;color:var(--text);margin-bottom:6px}
 
+    /* ── MODE TABS ── */
+    .mode-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:22px}
+    .mode-tab{flex:1;padding:11px 10px;font-size:13px;font-weight:600;border:none;background:none;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px}
+    .mode-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+    .mode-tab:hover:not(.active){color:var(--text);background:rgba(255,255,255,.04)}
+
+    /* ── HTML SNIPPET (web mode) ── */
+    .html-snip-wrap{margin-top:12px}
+    .html-snip-lbl{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+    .html-snip{background:var(--surface3);border:1px solid var(--border);border-radius:var(--rs);padding:10px 14px;overflow-x:auto}
+    .html-snip code{font-family:'SF Mono',Monaco,Consolas,monospace;font-size:11.5px;color:#93c5fd;white-space:pre-wrap;word-break:break-all;display:block}
+
     /* ── FOOTER ── */
     footer{border-top:1px solid var(--border);padding:18px 24px;text-align:center;font-size:12px;color:var(--text3)}
     footer a{color:var(--primaryL);text-decoration:none}
@@ -303,66 +315,95 @@
 <div id="screen-landing" class="screen active">
   <div class="wrap">
     <div class="hero">
-      <h1>Validate Your Figma Design<br>for Accessibility</h1>
-      <p>Paste your Figma share link and get a detailed WCAG 2.2 compliance report with specific failures, reasons, and actionable fix suggestions.</p>
+      <h1>WCAG 2.2 Accessibility Validator</h1>
+      <p>Analyse your Figma designs <em>or</em> live websites against WCAG 2.2 — get specific failures, reasons, and actionable fix suggestions.</p>
     </div>
 
     <div class="card">
-      <div class="fg">
-        <label>Figma Share Link</label>
-        <input type="url" id="in-url" placeholder="https://www.figma.com/design/FILEKEY/…  (not figma.com/site/…)" autocomplete="off">
+      <!-- Mode tabs -->
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="tab-figma" onclick="switchMode('figma')">🎨 Figma Design</button>
+        <button class="mode-tab" id="tab-web" onclick="switchMode('web')">🌐 Website URL</button>
       </div>
-      <div class="fg">
-        <label style="display:flex;align-items:center;gap:7px">
-          Personal Access Token
-          <span class="opt">(free · stored only in your browser)</span>
-          <span class="tt-wrap">
-            <button class="tt-btn" type="button" aria-label="Token help">?</button>
-            <div class="tt-box">
-              <strong>How to get your token:</strong>
-              <ol>
-                <li>Open Figma → click your avatar</li>
-                <li>Go to <strong>Settings → Security</strong></li>
-                <li>Click <strong>Personal Access Tokens</strong></li>
-                <li>Click <strong>Add new token</strong></li>
-                <li>Copy and paste it here</li>
-              </ol>
-              <div style="margin-top:7px;color:var(--primaryL)">Click "PDF Guide" below for screenshots ↓</div>
-            </div>
-          </span>
-          <button class="btn btn-secondary btn-sm" type="button" onclick="openGuide()" style="margin-left:auto;font-size:11px;padding:4px 11px">
-            📄 PDF Guide
-          </button>
-        </label>
-        <div class="ia">
-          <input type="password" id="in-token" placeholder="figd_..." autocomplete="off">
-          <button class="btn-icon" id="toggle-token" title="Show/hide token">👁</button>
-        </div>
-      </div>
-      <div class="fg">
-        <label>Compliance Target</label>
-        <div class="level-group">
-          <button class="lvl" onclick="setLevel(this,'A')">A only</button>
-          <button class="lvl active" onclick="setLevel(this,'AA')">A + AA <span style="opacity:.6;font-weight:400">(recommended)</span></button>
-          <button class="lvl" onclick="setLevel(this,'AAA')">A + AA + AAA</button>
-        </div>
-      </div>
-      <button class="btn btn-primary btn-full" onclick="runAnalysis()">Analyze Design</button>
 
-      <div class="hint">
-        <strong>How to get your free Figma Personal Access Token:</strong>
-        <ol>
-          <li>Open Figma → click your avatar → <strong>Settings</strong></li>
-          <li>Scroll to <strong>Security</strong> → <strong>Personal Access Tokens</strong></li>
-          <li>Click <strong>"Add new token"</strong>, give it any name, copy the token</li>
-          <li>Paste it above — saved only in your browser's localStorage</li>
-        </ol>
-        <br>
-        <strong>Getting the correct share link:</strong>
-        In Figma, open the design file → click <strong>Share</strong> (top-right) → <strong>Copy link</strong>.
-        The URL should look like <strong>figma.com/design/…</strong> or <strong>figma.com/file/…</strong>
-        <br><br>
-        ⚠️ <strong>Do not use</strong> a <em>figma.com/site/…</em> or <em>figma.site/…</em> URL — those point to a published Figma Sites page, not the design source file.
+      <!-- ── FIGMA MODE ── -->
+      <div id="mode-figma">
+        <div class="fg">
+          <label>Figma Share Link</label>
+          <input type="url" id="in-url" placeholder="https://www.figma.com/design/FILEKEY/…  (not figma.com/site/…)" autocomplete="off">
+        </div>
+        <div class="fg">
+          <label style="display:flex;align-items:center;gap:7px">
+            Personal Access Token
+            <span class="opt">(free · stored only in your browser)</span>
+            <span class="tt-wrap">
+              <button class="tt-btn" type="button" aria-label="Token help">?</button>
+              <div class="tt-box">
+                <strong>How to get your token:</strong>
+                <ol>
+                  <li>Open Figma → click your avatar</li>
+                  <li>Go to <strong>Settings → Security</strong></li>
+                  <li>Click <strong>Personal Access Tokens</strong></li>
+                  <li>Click <strong>Add new token</strong></li>
+                  <li>Copy and paste it here</li>
+                </ol>
+                <div style="margin-top:7px;color:var(--primaryL)">Click "PDF Guide" below for screenshots ↓</div>
+              </div>
+            </span>
+            <button class="btn btn-secondary btn-sm" type="button" onclick="openGuide()" style="margin-left:auto;font-size:11px;padding:4px 11px">
+              📄 PDF Guide
+            </button>
+          </label>
+          <div class="ia">
+            <input type="password" id="in-token" placeholder="figd_..." autocomplete="off">
+            <button class="btn-icon" id="toggle-token" title="Show/hide token">👁</button>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Compliance Target</label>
+          <div class="level-group">
+            <button class="lvl" onclick="setLevel(this,'A')">A only</button>
+            <button class="lvl active" onclick="setLevel(this,'AA')">A + AA <span style="opacity:.6;font-weight:400">(recommended)</span></button>
+            <button class="lvl" onclick="setLevel(this,'AAA')">A + AA + AAA</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="runAnalysis()">Analyze Design</button>
+        <div class="hint">
+          <strong>How to get your free Figma Personal Access Token:</strong>
+          <ol>
+            <li>Open Figma → click your avatar → <strong>Settings</strong></li>
+            <li>Scroll to <strong>Security</strong> → <strong>Personal Access Tokens</strong></li>
+            <li>Click <strong>"Add new token"</strong>, give it any name, copy the token</li>
+            <li>Paste it above — saved only in your browser's localStorage</li>
+          </ol>
+          <br>
+          <strong>Getting the correct share link:</strong>
+          In Figma, open the design file → click <strong>Share</strong> (top-right) → <strong>Copy link</strong>.
+          The URL should look like <strong>figma.com/design/…</strong> or <strong>figma.com/file/…</strong>
+          <br><br>
+          ⚠️ <strong>Do not use</strong> a <em>figma.com/site/…</em> URL — that is a published Figma Sites page, not the design source file.
+        </div>
+      </div>
+
+      <!-- ── WEBSITE MODE ── -->
+      <div id="mode-web" style="display:none">
+        <div class="fg">
+          <label>Website URL</label>
+          <input type="url" id="in-web-url" placeholder="https://example.com" autocomplete="off">
+        </div>
+        <div class="fg">
+          <label>Compliance Target</label>
+          <div class="level-group">
+            <button class="lvl" onclick="setLevel(this,'A')">A only</button>
+            <button class="lvl active" onclick="setLevel(this,'AA')">A + AA <span style="opacity:.6;font-weight:400">(recommended)</span></button>
+            <button class="lvl" onclick="setLevel(this,'AAA')">A + AA + AAA</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="runWebAnalysis()">Analyze Website</button>
+        <div class="hint">
+          <strong>What gets checked:</strong> image alt text, form labels, heading structure, link text, page title &amp; language, button names, duplicate IDs, iframe titles, autoplay media, table headers, and more — all against WCAG 2.2.<br><br>
+          ⚠️ <strong>Limitations:</strong> JavaScript-rendered content (React, Vue, Angular SPAs) may not be fully visible in the fetched HTML. Color contrast from CSS stylesheets cannot be checked without running the page. For full SPA coverage, combine this tool with the axe DevTools browser extension.
+        </div>
       </div>
     </div>
   </div>
@@ -557,15 +598,38 @@ const WCAG = {
     why:'Input fields without visible labels are unusable for screen reader users and confusing for users with cognitive disabilities.'},
   '4.1.2': {name:'Name, Role, Value',    level:'A',   principle:'Robust',
     why:'Assistive technologies need programmatic access to the name, role, and value of every interactive component.'},
+  '4.1.1': {name:'Parsing',             level:'A',   principle:'Robust',
+    why:'Duplicate IDs and malformed markup confuse assistive technologies that rely on the DOM structure to navigate.'},
+  '2.4.2': {name:'Page Titled',         level:'A',   principle:'Operable',
+    why:'Screen reader users hear the page title first — without it they cannot identify where they are.'},
+  '2.4.4': {name:'Link Purpose (In Context)', level:'A', principle:'Operable',
+    why:'Links like "click here" or "read more" give no context to screen reader users navigating by links list.'},
+  '2.4.1': {name:'Bypass Blocks',       level:'A',   principle:'Operable',
+    why:'Keyboard users must navigate through every menu link on every page before reaching content without a skip link.'},
+  '2.4.6': {name:'Headings and Labels', level:'AA',  principle:'Operable',
+    why:'Descriptive headings allow screen reader users to scan and jump directly to sections they need.'},
+  '3.1.1': {name:'Language of Page',    level:'A',   principle:'Understandable',
+    why:'The lang attribute allows screen readers to use correct pronunciation and language-specific rules.'},
+  '1.3.1': {name:'Info and Relationships', level:'A', principle:'Perceivable',
+    why:'Headings, lists, and tables convey structure visually — that structure must also be available programmatically.'},
+  '1.4.2': {name:'Audio Control',       level:'A',   principle:'Perceivable',
+    why:'Autoplaying audio can overlap screen reader speech, making the page completely unusable.'},
+  '1.3.5': {name:'Identify Input Purpose', level:'AA', principle:'Perceivable',
+    why:'The autocomplete attribute lets users with cognitive disabilities or motor impairments auto-fill personal information.'},
 };
 
 // WCAG Understanding doc slugs
 const WCAG_SLUG = {
-  '1.1.1':'non-text-content','1.4.1':'use-of-color','1.4.3':'contrast-minimum',
+  '1.1.1':'non-text-content','1.3.1':'info-and-relationships','1.3.5':'identify-input-purpose',
+  '1.4.1':'use-of-color','1.4.2':'audio-control','1.4.3':'contrast-minimum',
   '1.4.4':'resize-text','1.4.5':'images-of-text','1.4.6':'contrast-enhanced',
-  '1.4.11':'non-text-contrast','2.4.7':'focus-visible','2.4.11':'focus-not-obscured-minimum',
+  '1.4.11':'non-text-contrast',
+  '2.4.1':'bypass-blocks','2.4.2':'page-titled','2.4.4':'link-purpose-in-context',
+  '2.4.6':'headings-and-labels','2.4.7':'focus-visible','2.4.11':'focus-not-obscured-minimum',
   '2.5.3':'label-in-name','2.5.5':'target-size-enhanced','2.5.8':'target-size-minimum',
-  '3.2.4':'consistent-identification','3.3.2':'labels-or-instructions','4.1.2':'name-role-value',
+  '3.1.1':'language-of-page','3.2.4':'consistent-identification',
+  '3.3.2':'labels-or-instructions',
+  '4.1.1':'parsing','4.1.2':'name-role-value',
 };
 
 // ═══════════════════════════════════════════
@@ -1252,6 +1316,7 @@ function issueCard(iss, idx) {
         </div>
         ${cr.why?`<div class="why-box"><div class="why-title">Why This Matters</div>${cr.why}</div>`:''}
         ${screenshotHtml}
+        ${iss.htmlSnippet ? `<div class="html-snip-wrap"><div class="html-snip-lbl">HTML Element</div><div class="html-snip"><code>${iss.htmlSnippet.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></div></div>` : ''}
         <a class="ic-link" href="${wcagLink}" target="_blank" rel="noopener">
           → WCAG 2.2 — Understanding ${iss.criterion} ${cr.name||''}
         </a>
@@ -1331,6 +1396,7 @@ async function runAnalysis() {
   try { localStorage.setItem('figma_tok', token); } catch(e) {}
 
   show('loading');
+  document.querySelector('.ld-title').textContent = 'Analyzing Design';
   const steps = [
     'Parsing Figma URL',
     'Fetching design data',
@@ -1339,6 +1405,8 @@ async function runAnalysis() {
     'Capturing element screenshots',
     'Building accessibility report',
   ];
+  document.getElementById('step-list').innerHTML = steps.map((s,i) =>
+    `<li class="step" id="s${i}"><span class="step-ic">⏳</span> ${s}</li>`).join('');
   for(let i=0;i<6;i++) setStepState(i,'pending',steps[i]);
 
   try {
@@ -1882,6 +1950,405 @@ function printGuide() {
 }
 
 // ═══════════════════════════════════════════
+// WEBSITE ANALYSIS
+// ═══════════════════════════════════════════
+function switchMode(mode) {
+  document.getElementById('mode-figma').style.display = mode==='figma' ? 'block' : 'none';
+  document.getElementById('mode-web').style.display   = mode==='web'   ? 'block' : 'none';
+  document.getElementById('tab-figma').classList.toggle('active', mode==='figma');
+  document.getElementById('tab-web').classList.toggle('active', mode==='web');
+}
+
+async function fetchWebPage(url) {
+  const proxies = [
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`
+  ];
+  let lastErr;
+  for (const proxy of proxies) {
+    try {
+      const r = await fetch(proxy(url), { signal: AbortSignal.timeout(15000) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const html = await r.text();
+      if (!html || html.trim().length < 100) throw new Error('Empty response');
+      return html;
+    } catch(e) { lastErr = e; }
+  }
+  throw new Error(`Could not fetch the page. ${lastErr?.message || ''}\n\nMake sure the URL is publicly accessible and try again.`);
+}
+
+const WebCheck = {
+  pageTitle(doc, issues) {
+    const t = doc.querySelector('title');
+    if (!t || !t.textContent.trim()) {
+      issues.push({ criterion:'2.4.2', severity:'error',
+        path:'<head> › <title>',
+        description: 'Page has no <title> element or the title is empty.',
+        fix: 'Add a descriptive <title> element, e.g. <title>Home – My Site</title>.',
+        why: 'Screen reader users hear the page title first; it helps them know where they are.'
+      });
+    }
+  },
+  pageLang(doc, issues) {
+    const lang = doc.documentElement.getAttribute('lang');
+    if (!lang || !lang.trim()) {
+      issues.push({ criterion:'3.1.1', severity:'error',
+        path:'<html>',
+        description: 'The <html> element is missing a lang attribute.',
+        fix: 'Add lang="en" (or the appropriate BCP-47 language code) to <html>.',
+        why: 'Screen readers use the language attribute to select the correct pronunciation engine.'
+      });
+    }
+  },
+  imageAlt(doc, issues) {
+    doc.querySelectorAll('img').forEach(img => {
+      const alt = img.getAttribute('alt');
+      if (alt === null) {
+        issues.push({ criterion:'1.1.1', severity:'error',
+          path: imgPath(img),
+          description: 'Image is missing an alt attribute entirely.',
+          fix: 'Add alt="…" with a meaningful description, or alt="" if purely decorative.',
+          why: 'Screen readers skip images without alt, leaving blind users without the content.',
+          htmlSnippet: img.outerHTML.slice(0, 200)
+        });
+      } else if (alt.trim().length === 0) {
+        // decorative — OK, no issue
+      } else if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(alt)) {
+        issues.push({ criterion:'1.1.1', severity:'warning',
+          path: imgPath(img),
+          description: `alt="${alt}" looks like a filename, not a description.`,
+          fix: 'Replace the filename with a meaningful description of what the image shows.',
+          why: 'Filenames as alt text give screen reader users no useful information.',
+          htmlSnippet: img.outerHTML.slice(0, 200)
+        });
+      }
+    });
+  },
+  formLabels(doc, issues) {
+    doc.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]), select, textarea').forEach(el => {
+      const id = el.getAttribute('id');
+      const hasLabel = (id && doc.querySelector(`label[for="${CSS.escape(id)}"]`))
+        || el.getAttribute('aria-label')?.trim()
+        || el.getAttribute('aria-labelledby');
+      if (!hasLabel) {
+        issues.push({ criterion:'1.3.1', severity:'error',
+          path: elPath(el),
+          description: `Form control has no associated label (id="${id||'none'}").`,
+          fix: 'Add a <label for="…"> that matches the input id, or use aria-label="…".',
+          why: 'Without a label, screen reader users cannot identify what data the field expects.',
+          htmlSnippet: el.outerHTML.slice(0, 200)
+        });
+      }
+    });
+  },
+  linkPurpose(doc, issues) {
+    const vague = /^(click here|here|read more|more|learn more|details|link|this|page)$/i;
+    doc.querySelectorAll('a[href]').forEach(a => {
+      const txt = (a.textContent || '').replace(/\s+/g,' ').trim();
+      const ariaLabel = a.getAttribute('aria-label');
+      const effective = ariaLabel ? ariaLabel.trim() : txt;
+      if (effective.length > 0 && vague.test(effective)) {
+        issues.push({ criterion:'2.4.4', severity:'warning',
+          path: elPath(a),
+          description: `Link text "${effective}" does not describe the destination.`,
+          fix: `Replace with descriptive text, e.g. "View our pricing plans", or add aria-label="…".`,
+          why: 'Screen reader users often navigate by listing all links; vague labels are meaningless out of context.',
+          htmlSnippet: a.outerHTML.slice(0, 200)
+        });
+      }
+    });
+  },
+  skipLinks(doc, issues) {
+    const firstLink = doc.querySelector('a');
+    if (!firstLink) return;
+    const href = firstLink.getAttribute('href') || '';
+    const isSkip = href.startsWith('#') && /skip|main|content|nav/i.test(href + (firstLink.textContent||''));
+    if (!isSkip) {
+      issues.push({ criterion:'2.4.1', severity:'warning',
+        path:'<body> › first <a>',
+        description: 'No skip navigation link found at the start of the page.',
+        fix: 'Add <a href="#main-content" class="skip-link">Skip to main content</a> as the very first focusable element.',
+        why: 'Keyboard-only users must tab through every nav link on every page without a skip link.'
+      });
+    }
+  },
+  headings(doc, issues) {
+    const headings = [...doc.querySelectorAll('h1,h2,h3,h4,h5,h6')];
+    if (headings.length === 0) {
+      issues.push({ criterion:'2.4.6', severity:'warning',
+        path:'<body>',
+        description: 'Page contains no heading elements (h1–h6).',
+        fix: 'Structure content with heading elements so screen reader users can navigate by headings.',
+        why: 'Headings are the primary navigation mechanism for screen reader users on long pages.'
+      });
+      return;
+    }
+    const h1s = headings.filter(h => h.tagName==='H1');
+    if (h1s.length === 0) {
+      issues.push({ criterion:'2.4.6', severity:'warning',
+        path:'<body>',
+        description: 'Page has no <h1> element.',
+        fix: 'Add a single <h1> that describes the page topic.',
+        why: 'The h1 identifies the main topic; assistive technologies rely on it for orientation.'
+      });
+    }
+    // Check for skipped levels
+    let prevLevel = 0;
+    headings.forEach(h => {
+      const level = parseInt(h.tagName[1]);
+      if (prevLevel > 0 && level > prevLevel + 1) {
+        issues.push({ criterion:'2.4.6', severity:'warning',
+          path: elPath(h),
+          description: `Heading level skipped: <h${prevLevel}> jumps to <h${level}>.`,
+          fix: `Use <h${prevLevel+1}> instead of <h${level}> to maintain a logical outline.`,
+          why: 'Skipped heading levels confuse screen reader users navigating by heading structure.',
+          htmlSnippet: h.outerHTML.slice(0,150)
+        });
+      }
+      prevLevel = level;
+    });
+  },
+  interactiveNames(doc, issues) {
+    doc.querySelectorAll('button, [role="button"], [role="link"]').forEach(el => {
+      const txt = (el.textContent||'').replace(/\s+/g,' ').trim();
+      const ariaLabel = el.getAttribute('aria-label')?.trim();
+      const ariaLabelledBy = el.getAttribute('aria-labelledby');
+      const title = el.getAttribute('title')?.trim();
+      const effective = ariaLabel || ariaLabelledBy || txt || title || '';
+      if (!effective) {
+        issues.push({ criterion:'4.1.1', severity:'error',
+          path: elPath(el),
+          description: `Interactive element has no accessible name.`,
+          fix: 'Add descriptive text content, aria-label="…", or aria-labelledby pointing to a visible label.',
+          why: 'Screen readers announce buttons/links by their accessible name; without one, users cannot understand the control.',
+          htmlSnippet: el.outerHTML.slice(0,200)
+        });
+      }
+    });
+  },
+  duplicateIds(doc, issues) {
+    const ids = {};
+    doc.querySelectorAll('[id]').forEach(el => {
+      const id = el.getAttribute('id');
+      ids[id] = (ids[id]||0) + 1;
+    });
+    Object.entries(ids).filter(([,n])=>n>1).slice(0,10).forEach(([id]) => {
+      issues.push({ criterion:'4.1.1', severity:'error',
+        path:`[id="${id}"]`,
+        description: `id="${id}" is used on multiple elements.`,
+        fix: `Each id must be unique. Rename duplicates so every id appears only once.`,
+        why: 'Duplicate ids break ARIA relationships and cause screen readers to skip elements.'
+      });
+    });
+  },
+  iframeTitles(doc, issues) {
+    doc.querySelectorAll('iframe').forEach(fr => {
+      const title = fr.getAttribute('title')?.trim();
+      if (!title) {
+        issues.push({ criterion:'4.1.1', severity:'error',
+          path: elPath(fr),
+          description: '<iframe> is missing a title attribute.',
+          fix: 'Add title="…" describing the iframe content, e.g. title="Google Maps — Store Location".',
+          why: 'Screen readers announce the iframe title when focus enters it; without one, the context is lost.',
+          htmlSnippet: fr.outerHTML.slice(0,200)
+        });
+      }
+    });
+  },
+  autoplay(doc, issues) {
+    doc.querySelectorAll('video[autoplay], audio[autoplay]').forEach(el => {
+      if (!el.hasAttribute('muted')) {
+        issues.push({ criterion:'1.4.2', severity:'error',
+          path: elPath(el),
+          description: `<${el.tagName.toLowerCase()}> autoplays with audio.`,
+          fix: 'Remove autoplay, or add a mechanism to pause/stop/mute the media within 3 seconds of load.',
+          why: 'Autoplaying audio interferes with screen readers and is disorienting for many users.',
+          htmlSnippet: el.outerHTML.slice(0,200)
+        });
+      }
+    });
+  },
+  tables(doc, issues) {
+    doc.querySelectorAll('table').forEach(tbl => {
+      const ths = tbl.querySelectorAll('th');
+      const caption = tbl.querySelector('caption');
+      if (ths.length === 0) {
+        issues.push({ criterion:'1.3.1', severity:'warning',
+          path: elPath(tbl),
+          description: 'Data table has no <th> header cells.',
+          fix: 'Add <th scope="col"> or <th scope="row"> to mark header cells.',
+          why: 'Without headers, screen reader users cannot understand what each cell data represents.',
+          htmlSnippet: tbl.outerHTML.slice(0,300)
+        });
+      }
+      if (!caption && ths.length > 0) {
+        issues.push({ criterion:'1.3.1', severity:'info',
+          path: elPath(tbl),
+          description: 'Table has no <caption> element.',
+          fix: 'Add <caption>Table description here</caption> as the first child of <table>.',
+          why: 'Captions help screen reader users understand the purpose of a table before reading it.',
+          htmlSnippet: tbl.outerHTML.slice(0,300)
+        });
+      }
+    });
+  },
+  inputPurpose(doc, issues) {
+    const purposeMap = {
+      'name':'name','email':'email','tel':'tel','url':'url',
+      'given-name':'given-name','family-name':'family-name',
+      'street-address':'street-address','postal-code':'postal-code',
+      'cc-name':'cc-name','cc-number':'cc-number','bday':'bday'
+    };
+    doc.querySelectorAll('input[type="text"],input[type="email"],input[type="tel"],input[type="url"]').forEach(inp => {
+      const autocomplete = inp.getAttribute('autocomplete');
+      const nameLower = (inp.getAttribute('name')||inp.getAttribute('id')||'').toLowerCase();
+      const matched = Object.keys(purposeMap).find(k => nameLower.includes(k));
+      if (matched && !autocomplete) {
+        issues.push({ criterion:'1.3.5', severity:'warning',
+          path: elPath(inp),
+          description: `Input "${inp.getAttribute('name')||inp.getAttribute('id')}" is likely "${matched}" but has no autocomplete attribute.`,
+          fix: `Add autocomplete="${purposeMap[matched]}" to this input.`,
+          why: 'Autocomplete attributes help people with cognitive disabilities and motor impairments fill in forms faster.',
+          htmlSnippet: inp.outerHTML.slice(0,200)
+        });
+      }
+    });
+  }
+};
+
+function imgPath(el) {
+  const src = el.getAttribute('src')||'';
+  return `<img src="${src.slice(0,60)}${src.length>60?'…':''}">`;
+}
+function elPath(el) {
+  const parts = [];
+  let cur = el;
+  while (cur && cur.tagName) {
+    let seg = cur.tagName.toLowerCase();
+    const id = cur.getAttribute('id');
+    const cls = [...(cur.classList||[])].slice(0,2).join('.');
+    if (id) seg += `#${id}`;
+    else if (cls) seg += `.${cls}`;
+    parts.unshift(seg);
+    cur = cur.parentElement;
+    if (parts.length >= 4) break;
+  }
+  return parts.join(' › ');
+}
+
+function analyzeWebDocument(doc, sourceUrl) {
+  const issues = [];
+  Object.values(WebCheck).forEach(fn => {
+    try { fn(doc, issues); } catch(e) { console.warn('WebCheck error:', e); }
+  });
+  // Deduplicate by criterion + path
+  const seen = new Set();
+  const unique = issues.filter(iss => {
+    const key = iss.criterion + '|' + iss.path;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return unique.map((iss, i) => ({
+    id: `web-${i}`,
+    criterion: iss.criterion,
+    severity: iss.severity,
+    path: [iss.path],
+    elementName: iss.path,
+    description: iss.description,
+    suggestion: iss.fix,
+    htmlSnippet: iss.htmlSnippet || null,
+    nodeId: null,
+    elementBounds: null,
+    frameBounds: null,
+    screenshotUrl: null,
+    textContent: null,
+    details: {},
+    manualReview: iss.severity === 'manual'
+  }));
+}
+
+async function runWebAnalysis() {
+  const urlRaw = (document.getElementById('in-web-url')?.value || '').trim();
+  if (!urlRaw) { alert('Please enter a website URL.'); return; }
+  let url = urlRaw;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  try { new URL(url); } catch(e) { alert('Invalid URL. Please enter a full URL like https://example.com'); return; }
+
+  const level = TARGET_LEVEL || 'AA';
+
+  show('loading');
+  document.querySelector('.ld-title').textContent = 'Analyzing Website';
+
+  const webSteps = [
+    'Fetching page via CORS proxy',
+    'Parsing HTML document',
+    'Running WCAG 2.2 checks',
+    'Building accessibility report'
+  ];
+  document.getElementById('step-list').innerHTML = webSteps.map((s, i) =>
+    `<li class="step" id="s${i}"><span class="step-ic">⏳</span> ${s}</li>`).join('');
+  for (let i = 0; i < webSteps.length; i++) setStepState(i, 'pending', webSteps[i]);
+
+  try {
+    // 0 — fetch
+    setStepState(0, 'active', 'Fetching page via CORS proxy…');
+    await pause(60);
+    const html = await fetchWebPage(url);
+    setStepState(0, 'done', 'Page fetched');
+
+    // 1 — parse
+    setStepState(1, 'active', 'Parsing HTML document…');
+    await pause(60);
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const elementCount = doc.querySelectorAll('*').length;
+    setStepState(1, 'done', `Parsed — ${elementCount.toLocaleString()} elements`);
+
+    // 2 — analyze
+    setStepState(2, 'active', 'Running WCAG 2.2 checks…');
+    await pause(60);
+    const issues = analyzeWebDocument(doc, url);
+
+    // Filter by selected level
+    const levelOrder = { A:1, AA:2, AAA:3 };
+    const maxLevel = levelOrder[level] || 2;
+    const filtered = issues.filter(i => {
+      const c = WCAG[i.criterion];
+      if (!c) return true;
+      return (levelOrder[c.level] || 1) <= maxLevel;
+    });
+    setStepState(2, 'done', `${filtered.length} issue${filtered.length!==1?'s':''} found`);
+
+    // 3 — report
+    setStepState(3, 'active', 'Building accessibility report…');
+    await pause(100);
+    setStepState(3, 'done', 'Report ready');
+    await pause(200);
+
+    const domainLabel = (() => { try { return new URL(url).hostname; } catch(e) { return url; } })();
+
+    renderResults(filtered, {
+      fileName: domainLabel,
+      fileKey: url,
+      nodeCount: elementCount,
+      targetLevel: level,
+      analyzedAt: new Date().toISOString(),
+      sourceType: 'web'
+    }, {});
+
+  } catch(e) {
+    console.error(e);
+    setStepState(0, 'err', 'Failed');
+    document.getElementById('err-msg').textContent = e.message || String(e);
+    const code = document.getElementById('err-code');
+    if (e.stack) { code.textContent = e.stack.split('\n')[0]; code.style.display='block'; }
+    else code.style.display = 'none';
+    show('error');
+  }
+}
+
+// ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
 (function init() {
@@ -1898,6 +2365,13 @@ function printGuide() {
   document.getElementById('in-url').addEventListener('keydown', e => {
     if(e.key==='Enter') runAnalysis();
   });
+
+  const webUrlInput = document.getElementById('in-web-url');
+  if (webUrlInput) {
+    webUrlInput.addEventListener('keydown', e => {
+      if(e.key==='Enter') runWebAnalysis();
+    });
+  }
 })();
 </script>
 
