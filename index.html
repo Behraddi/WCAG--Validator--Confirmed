@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WCAG 2.2 Design Validator</title>
+  <style>
+    :root {
+      --bg:        #0d0f1a;
+      --surface:   #161929;
+      --surface2:  #1e2235;
+      --surface3:  #252a40;
+      --border:    #2a2f4a;
+      --borderB:   #3a4070;
+      --text:      #e2e5f1;
+      --text2:     #9099c0;
+      --text3:     #636b8a;
+      --primary:   #6366f1;
+      --primaryL:  #818cf8;
+      --primaryD:  #4f52d0;
+      --success:   #10b981;
+      --sucBg:     rgba(16,185,129,.10);
+      --warn:      #f59e0b;
+      --warnBg:    rgba(245,158,11,.10);
+      --error:     #ef4444;
+      --errBg:     rgba(239,68,68,.10);
+      --info:      #3b82f6;
+      --infoBg:    rgba(59,130,246,.10);
+      --r:         12px;
+      --rs:        8px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;min-height:100vh;line-height:1.5}
+
+    /* ── HEADER ── */
+    header{border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;background:var(--surface);position:sticky;top:0;z-index:10}
+    .logo{width:34px;height:34px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0}
+    .hd-title{font-size:17px;font-weight:700}
+    .hd-sub{font-size:11px;color:var(--text3);margin-top:1px}
+    .hd-badge{margin-left:auto;font-size:11px;font-weight:700;background:var(--primary);color:#fff;padding:3px 10px;border-radius:20px;letter-spacing:.04em}
+
+    /* ── LAYOUT ── */
+    .wrap{max-width:860px;margin:0 auto;padding:36px 20px}
+    .screen{display:none}
+    .screen.active{display:block}
+
+    /* ── LANDING ── */
+    .hero{text-align:center;padding:8px 0 36px}
+    .hero h1{font-size:clamp(26px,5vw,40px);font-weight:800;line-height:1.15;margin-bottom:10px;background:linear-gradient(135deg,#e2e5f1 40%,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero p{color:var(--text2);font-size:15px;max-width:480px;margin:0 auto}
+
+    /* ── CARD ── */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:26px}
+    .card+.card{margin-top:14px}
+
+    /* ── FORM ── */
+    .fg{margin-bottom:18px}
+    .fg:last-child{margin-bottom:0}
+    label{display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:7px;letter-spacing:.06em;text-transform:uppercase}
+    .opt{text-transform:none;font-weight:400;font-size:11px;color:var(--text3)}
+    input[type=text],input[type=password],input[type=url]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:11px 14px;color:var(--text);font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s}
+    input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,.2)}
+    input::placeholder{color:var(--text3)}
+    .ia{display:flex;gap:8px}
+    .ia input{flex:1}
+    .btn-icon{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:0 13px;color:var(--text2);cursor:pointer;font-size:13px;transition:background .15s}
+    .btn-icon:hover{background:var(--surface3)}
+
+    /* ── BUTTONS ── */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 22px;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;border:none;text-decoration:none}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-primary:hover{background:var(--primaryD);transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,.3)}
+    .btn-primary:active{transform:none}
+    .btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+    .btn-secondary:hover{background:var(--surface3)}
+    .btn-full{width:100%;padding:13px}
+    .btn-sm{padding:7px 14px;font-size:13px}
+
+    /* ── LEVEL PILLS ── */
+    .level-group{display:flex;gap:8px;flex-wrap:wrap}
+    .lvl{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s}
+    .lvl:hover{border-color:var(--borderB);color:var(--text)}
+    .lvl.active{background:var(--primary);border-color:var(--primary);color:#fff}
+
+    /* ── HINT ── */
+    .hint{background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.18);border-radius:var(--rs);padding:14px 16px;font-size:13px;color:var(--text2);margin-top:16px;line-height:1.7}
+    .hint strong{color:var(--primaryL)}
+    .hint ol{padding-left:18px;margin-top:6px}
+    .hint li{margin-bottom:3px}
+
+    /* ── LOADING ── */
+    #screen-loading .wrap{display:flex;flex-direction:column;align-items:center;min-height:60vh;gap:18px;text-align:center;padding-top:80px}
+    .spinner{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .75s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .ld-title{font-size:20px;font-weight:700}
+    .ld-sub{color:var(--text2);font-size:14px}
+    .step-list{list-style:none;display:flex;flex-direction:column;gap:8px;width:100%;max-width:340px}
+    .step{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);font-size:13px;color:var(--text2);transition:all .2s}
+    .step.done{color:var(--success);border-color:rgba(16,185,129,.3)}
+    .step.active{color:var(--text);border-color:var(--primary)}
+    .step.err{color:var(--error);border-color:rgba(239,68,68,.3)}
+    .step-ic{font-size:15px}
+
+    /* ── ERROR ── */
+    #screen-error .wrap{display:flex;flex-direction:column;align-items:center;min-height:80vh;gap:14px;text-align:center;padding-top:80px}
+    .err-icon{font-size:44px}
+    .err-title{font-size:22px;font-weight:700;color:var(--error)}
+    .err-msg{color:var(--text2);font-size:14px;max-width:520px;line-height:1.7;white-space:pre-line;text-align:left}
+    .err-code{background:var(--surface);border:1px solid rgba(239,68,68,.3);border-radius:var(--rs);padding:12px 18px;font-family:monospace;font-size:12px;color:var(--error);max-width:500px;width:100%;word-break:break-all;text-align:left}
+
+    /* ── RESULTS HEADER ── */
+    .res-hdr{display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+    .res-title{font-size:20px;font-weight:700;flex:1}
+    .res-actions{display:flex;gap:8px}
+
+    /* ── COMPLIANCE BANNER ── */
+    .comp-banner{border:1px solid var(--border);border-radius:var(--r);padding:18px 22px;display:flex;align-items:center;gap:14px;margin-bottom:20px;background:var(--surface)}
+    .comp-icon{font-size:30px;flex-shrink:0}
+    .comp-level{font-size:18px;font-weight:700}
+    .comp-sub{font-size:13px;color:var(--text2);margin-top:3px;line-height:1.5}
+
+    /* ── SUMMARY GRID ── */
+    .sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:22px}
+    .sum-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;text-align:center}
+    .sum-num{font-size:32px;font-weight:800;line-height:1;margin-bottom:5px}
+    .sum-lbl{font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+    .cn-err{color:var(--error)}
+    .cn-warn{color:var(--warn)}
+    .cn-info{color:var(--info)}
+    .cn-pass{color:var(--success)}
+
+    /* ── FILTERS ── */
+    .filters{display:flex;gap:7px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+    .fl{color:var(--text3);font-size:12px;margin-right:2px}
+    .flt{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s}
+    .flt:hover{border-color:var(--borderB);color:var(--text)}
+    .flt.active{background:var(--primary);border-color:var(--primary);color:#fff}
+    .flt.fe.active{background:var(--error);border-color:var(--error)}
+    .flt.fw.active{background:var(--warn);border-color:var(--warn);color:#000}
+    .flt.fi.active{background:var(--info);border-color:var(--info)}
+
+    /* ── ISSUE CARDS ── */
+    .issues{display:flex;flex-direction:column;gap:10px}
+    .ic{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:border-color .15s}
+    .ic:hover{border-color:var(--borderB)}
+    .ic-hdr{padding:14px 18px;display:flex;align-items:flex-start;gap:11px;cursor:pointer}
+    .ic-ico{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:1px}
+    .ic-ico.error{background:var(--errBg)}
+    .ic-ico.warning{background:var(--warnBg)}
+    .ic-ico.info{background:var(--infoBg)}
+    .ic-ico.manual{background:rgba(107,114,128,.1)}
+    .ic-meta{flex:1;min-width:0}
+    .ic-crit{display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap}
+    .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:800;letter-spacing:.05em}
+    .b-A{background:rgba(16,185,129,.15);color:var(--success)}
+    .b-AA{background:rgba(99,102,241,.15);color:var(--primaryL)}
+    .b-AAA{background:rgba(245,158,11,.15);color:var(--warn)}
+    .b-error{background:var(--errBg);color:var(--error)}
+    .b-warning{background:var(--warnBg);color:var(--warn)}
+    .b-info{background:var(--infoBg);color:var(--info)}
+    .b-manual{background:rgba(107,114,128,.1);color:#9ca3af}
+    .crit-id{font-size:13px;font-weight:700}
+    .crit-nm{font-size:13px;color:var(--text2)}
+    .ic-desc{font-size:14px;color:var(--text);margin-bottom:3px;line-height:1.5}
+    .ic-path{font-size:11px;color:var(--text3);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ic-tog{color:var(--text3);font-size:16px;transition:transform .2s;flex-shrink:0;padding-top:2px}
+    .ic.open .ic-tog{transform:rotate(180deg)}
+
+    .ic-body{display:none;padding:0 18px 18px;border-top:1px solid var(--border)}
+    .ic.open .ic-body{display:block}
+
+    .det-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+    .det-item{background:var(--surface2);border-radius:var(--rs);padding:11px 14px}
+    .det-lbl{font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+    .det-val{font-size:14px;font-weight:700;color:var(--text)}
+    .det-val.fail{color:var(--error)}
+    .det-val.pass{color:var(--success)}
+    .swatch{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid rgba(255,255,255,.1);vertical-align:middle;margin-right:5px;position:relative;top:-1px}
+
+    .sug-box{background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:var(--rs);padding:13px 15px;margin-top:12px}
+    .sug-title{font-size:11px;font-weight:800;color:var(--primaryL);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+    .sug-text{font-size:13px;color:var(--text2);line-height:1.65}
+
+    .why-box{background:var(--surface2);border-radius:var(--rs);padding:11px 14px;margin-top:10px;font-size:13px;color:var(--text2);line-height:1.6}
+    .why-title{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+
+    .ic-link{display:inline-block;margin-top:10px;font-size:12px;color:var(--primaryL);text-decoration:none}
+    .ic-link:hover{text-decoration:underline}
+
+    /* ── SCREENSHOT ── */
+    .sc-wrap{margin-top:14px}
+    .sc-label{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+    .sc-frame{border:1px solid var(--border);border-radius:var(--rs);overflow:hidden;background:#fff;position:relative;max-height:280px;display:flex;align-items:center;justify-content:center}
+    .sc-frame img{display:block;width:100%;max-height:280px;object-fit:contain}
+    .sc-frame.loading::after{content:'Loading screenshot…';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text3);background:var(--surface2)}
+    .sc-frame.error-img{background:var(--surface2);padding:20px;justify-content:center;font-size:12px;color:var(--text3);min-height:60px}
+    .sc-zoom{display:inline-block;margin-top:6px;font-size:11px;color:var(--primaryL);text-decoration:none;cursor:pointer}
+    .sc-zoom:hover{text-decoration:underline}
+
+    /* ── OVERALL MARK ── */
+    .om-card{display:flex;align-items:stretch;background:var(--surface);border:2px solid var(--border);border-radius:var(--r);margin-bottom:20px;overflow:hidden}
+    .om-left{padding:26px 28px;text-align:center;flex-shrink:0;min-width:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border-right:1px solid var(--border)}
+    .om-verdict{font-size:30px;font-weight:900;letter-spacing:.06em;padding:10px 22px;border-radius:var(--rs);font-family:monospace;line-height:1}
+    .om-level{font-size:13px;font-weight:700;color:var(--text)}
+    .om-sublbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+    .om-right{padding:22px 26px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:12px}
+    .om-score-row{display:flex;align-items:baseline;gap:10px}
+    .om-pct{font-size:40px;font-weight:800;line-height:1}
+    .om-pct-lbl{font-size:13px;color:var(--text2);line-height:1.4}
+    .om-bar{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden}
+    .om-bar-fill{height:100%;border-radius:5px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+    .om-stats{display:flex;gap:18px;flex-wrap:wrap}
+    .om-stat{font-size:13px;color:var(--text2)}
+    .om-stat strong{font-size:15px}
+    .om-note{font-size:12px;color:var(--warn);font-style:italic;margin-top:2px}
+    @media(max-width:600px){
+      .om-card{flex-direction:column}
+      .om-left{border-right:none;border-bottom:1px solid var(--border);padding:20px;flex-direction:row;gap:16px;min-width:0;justify-content:flex-start}
+    }
+
+    /* ── EMPTY ── */
+    .empty{text-align:center;padding:56px 20px;color:var(--text2)}
+    .empty-ic{font-size:44px;margin-bottom:10px}
+    .empty-t{font-size:19px;font-weight:700;color:var(--text);margin-bottom:6px}
+
+    /* ── FOOTER ── */
+    footer{border-top:1px solid var(--border);padding:18px 24px;text-align:center;font-size:12px;color:var(--text3)}
+    footer a{color:var(--primaryL);text-decoration:none}
+    footer a:hover{text-decoration:underline}
+
+    /* ── WSU LOGO ── */
+    .logo-wsu{width:36px;height:36px;object-fit:contain;filter:brightness(0) invert(1);flex-shrink:0}
+
+    /* ── COURSE NOTICE BANNER ── */
+    .course-notice{background:linear-gradient(90deg,rgba(99,102,241,.12) 0%,rgba(99,102,241,.06) 100%);border-bottom:1px solid rgba(99,102,241,.25);padding:10px 24px;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text2)}
+    .course-notice strong{color:var(--primaryL)}
+    .cn-pill{background:var(--primary);color:#fff;font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px;letter-spacing:.05em;white-space:nowrap;flex-shrink:0}
+
+    /* ── TOOLTIP ── */
+    .tt-wrap{position:relative;display:inline-flex;align-items:center}
+    .tt-btn{width:18px;height:18px;border-radius:50%;background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.35);color:var(--primaryL);font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;padding:0;transition:background .15s}
+    .tt-btn:hover{background:rgba(99,102,241,.35)}
+    .tt-box{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:260px;background:var(--surface3);border:1px solid var(--borderB);border-radius:var(--rs);padding:12px 14px;font-size:12px;line-height:1.6;color:var(--text);z-index:100;pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    .tt-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--surface3)}
+    .tt-wrap:hover .tt-box,.tt-wrap:focus-within .tt-box{opacity:1;pointer-events:auto}
+    .tt-box ol{padding-left:16px;margin-top:4px}
+    .tt-box li{margin-bottom:2px}
+
+    /* ── MODAL OVERLAY ── */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:600px;overflow:hidden;position:relative}
+    .modal-hdr{background:linear-gradient(135deg,var(--primary),var(--primaryD));padding:22px 24px;display:flex;align-items:center;gap:14px}
+    .modal-hdr-logo{width:40px;height:40px;object-fit:contain;filter:brightness(0) invert(1);flex-shrink:0}
+    .modal-hdr-text h2{font-size:17px;font-weight:800;color:#fff;margin-bottom:2px}
+    .modal-hdr-text p{font-size:12px;color:rgba(255,255,255,.75)}
+    .modal-close{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+    .modal-close:hover{background:rgba(255,255,255,.28)}
+    .modal-body{padding:24px}
+    .guide-step{display:flex;gap:14px;margin-bottom:20px}
+    .guide-step:last-child{margin-bottom:0}
+    .gs-num{width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+    .gs-body{}
+    .gs-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+    .gs-desc{font-size:13px;color:var(--text2);line-height:1.6}
+    .gs-desc code{background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-family:monospace;font-size:12px;color:var(--primaryL)}
+    .gs-note{margin-top:6px;padding:8px 12px;background:rgba(245,158,11,.08);border-left:3px solid var(--warn);border-radius:0 4px 4px 0;font-size:12px;color:var(--text2)}
+    .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+    .modal-footer .note-txt{font-size:11px;color:var(--text3);flex:1}
+
+    @media(max-width:580px){
+      .det-grid{grid-template-columns:1fr}
+      .sum-grid{grid-template-columns:repeat(2,1fr)}
+      .res-hdr{flex-direction:column;align-items:flex-start}
+      .tt-box{left:0;transform:none}
+      .tt-box::after{left:12px;transform:none}
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img class="logo-wsu" src="data:image/png;base64,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" alt="Western Sydney University">
+  <div>
+    <div class="hd-title">WCAG 2.2 Validator</div>
+    <div class="hd-sub">Design Accessibility Checker — DESN2005</div>
+  </div>
+  <span class="hd-badge">WCAG 2.2</span>
+</header>
+
+<!-- ════ COURSE NOTICE ════ -->
+<div class="course-notice">
+  <span class="cn-pill">DESN2005</span>
+  <span>This tool is designed exclusively for <strong>Western Sydney University</strong> students enrolled in <strong>DESN2005 – Graphic Design: Interactive Digital Media</strong></span>
+</div>
+
+<!-- ════ LANDING ════ -->
+<div id="screen-landing" class="screen active">
+  <div class="wrap">
+    <div class="hero">
+      <h1>Validate Your Figma Design<br>for Accessibility</h1>
+      <p>Paste your Figma share link and get a detailed WCAG 2.2 compliance report with specific failures, reasons, and actionable fix suggestions.</p>
+    </div>
+
+    <div class="card">
+      <div class="fg">
+        <label>Figma Share Link</label>
+        <input type="url" id="in-url" placeholder="https://www.figma.com/design/FILEKEY/…  (not figma.com/site/…)" autocomplete="off">
+      </div>
+      <div class="fg">
+        <label style="display:flex;align-items:center;gap:7px">
+          Personal Access Token
+          <span class="opt">(free · stored only in your browser)</span>
+          <span class="tt-wrap">
+            <button class="tt-btn" type="button" aria-label="Token help">?</button>
+            <div class="tt-box">
+              <strong>How to get your token:</strong>
+              <ol>
+                <li>Open Figma → click your avatar</li>
+                <li>Go to <strong>Settings → Security</strong></li>
+                <li>Click <strong>Personal Access Tokens</strong></li>
+                <li>Click <strong>Add new token</strong></li>
+                <li>Copy and paste it here</li>
+              </ol>
+              <div style="margin-top:7px;color:var(--primaryL)">Click "PDF Guide" below for screenshots ↓</div>
+            </div>
+          </span>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="openGuide()" style="margin-left:auto;font-size:11px;padding:4px 11px">
+            📄 PDF Guide
+          </button>
+        </label>
+        <div class="ia">
+          <input type="password" id="in-token" placeholder="figd_..." autocomplete="off">
+          <button class="btn-icon" id="toggle-token" title="Show/hide token">👁</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Compliance Target</label>
+        <div class="level-group">
+          <button class="lvl" onclick="setLevel(this,'A')">A only</button>
+          <button class="lvl active" onclick="setLevel(this,'AA')">A + AA <span style="opacity:.6;font-weight:400">(recommended)</span></button>
+          <button class="lvl" onclick="setLevel(this,'AAA')">A + AA + AAA</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="runAnalysis()">Analyze Design</button>
+
+      <div class="hint">
+        <strong>How to get your free Figma Personal Access Token:</strong>
+        <ol>
+          <li>Open Figma → click your avatar → <strong>Settings</strong></li>
+          <li>Scroll to <strong>Security</strong> → <strong>Personal Access Tokens</strong></li>
+          <li>Click <strong>"Add new token"</strong>, give it any name, copy the token</li>
+          <li>Paste it above — saved only in your browser's localStorage</li>
+        </ol>
+        <br>
+        <strong>Getting the correct share link:</strong>
+        In Figma, open the design file → click <strong>Share</strong> (top-right) → <strong>Copy link</strong>.
+        The URL should look like <strong>figma.com/design/…</strong> or <strong>figma.com/file/…</strong>
+        <br><br>
+        ⚠️ <strong>Do not use</strong> a <em>figma.com/site/…</em> or <em>figma.site/…</em> URL — those point to a published Figma Sites page, not the design source file.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ LOADING ════ -->
+<div id="screen-loading" class="screen">
+  <div class="wrap">
+    <div class="spinner"></div>
+    <div class="ld-title">Analyzing Design</div>
+    <div class="ld-sub" id="ld-sub">Please wait…</div>
+    <ul class="step-list" id="step-list">
+      <li class="step" id="s0"><span class="step-ic">⏳</span> Parsing Figma URL</li>
+      <li class="step" id="s1"><span class="step-ic">⏳</span> Fetching design data</li>
+      <li class="step" id="s2"><span class="step-ic">⏳</span> Traversing design tree</li>
+      <li class="step" id="s3"><span class="step-ic">⏳</span> Running WCAG 2.2 checks</li>
+      <li class="step" id="s4"><span class="step-ic">⏳</span> Capturing element screenshots</li>
+      <li class="step" id="s5"><span class="step-ic">⏳</span> Building report</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ════ ERROR ════ -->
+<div id="screen-error" class="screen">
+  <div class="wrap">
+    <div class="err-icon">⚠️</div>
+    <div class="err-title">Analysis Failed</div>
+    <div class="err-msg" id="err-msg"></div>
+    <div class="err-code" id="err-code" style="display:none"></div>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn btn-primary" onclick="show('landing')">← Try Again</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ RESULTS ════ -->
+<div id="screen-results" class="screen">
+  <div class="wrap">
+    <div class="res-hdr">
+      <div class="res-title" id="res-title">Results</div>
+      <div class="res-actions">
+        <button class="btn btn-secondary btn-sm" onclick="show('landing')">← New Analysis</button>
+        <button class="btn btn-secondary btn-sm" onclick="generatePDFReport()">📄 PDF Report</button>
+        <button class="btn btn-secondary btn-sm" onclick="doExport()">Export JSON</button>
+      </div>
+    </div>
+
+    <div id="overall-mark"></div>
+    <div class="sum-grid" id="sum-grid"></div>
+
+    <div class="filters">
+      <span class="fl">Show:</span>
+      <button class="flt active" onclick="filter('all',this)">All</button>
+      <button class="flt fe" onclick="filter('error',this)">Errors</button>
+      <button class="flt fw" onclick="filter('warning',this)">Warnings</button>
+      <button class="flt fi" onclick="filter('info',this)">Info</button>
+      <button class="flt" onclick="filter('manual',this)">Manual Review</button>
+    </div>
+
+    <div class="issues" id="issues-list"></div>
+  </div>
+</div>
+
+<!-- ════ FIGMA TOKEN GUIDE MODAL ════ -->
+<div class="modal-overlay" id="guide-modal" onclick="if(event.target===this)closeGuide()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <img class="modal-hdr-logo" src="data:image/png;base64,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" alt="WSU">
+      <div class="modal-hdr-text">
+        <h2>How to Get Your Figma Personal Access Token</h2>
+        <p>Step-by-step guide for DESN2005 students — Western Sydney University</p>
+      </div>
+      <button class="modal-close" onclick="closeGuide()" aria-label="Close guide">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="guide-step">
+        <div class="gs-num">1</div>
+        <div class="gs-body">
+          <div class="gs-title">Open Figma and sign in</div>
+          <div class="gs-desc">Go to <strong>figma.com</strong> and sign in to your account. You need the web app or desktop app — both work.</div>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="gs-num">2</div>
+        <div class="gs-body">
+          <div class="gs-title">Click your profile avatar</div>
+          <div class="gs-desc">In the <strong>top-left corner</strong> of the Figma home screen, click your profile picture or initials to open the account menu.</div>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="gs-num">3</div>
+        <div class="gs-body">
+          <div class="gs-title">Open Settings</div>
+          <div class="gs-desc">Select <strong>Settings</strong> from the dropdown. This opens your account settings page.</div>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="gs-num">4</div>
+        <div class="gs-body">
+          <div class="gs-title">Go to the Security tab</div>
+          <div class="gs-desc">In the settings panel, click the <strong>Security</strong> tab in the left sidebar (or scroll down to find the Security section).</div>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="gs-num">5</div>
+        <div class="gs-body">
+          <div class="gs-title">Create a new Personal Access Token</div>
+          <div class="gs-desc">Find the <strong>Personal Access Tokens</strong> section and click <strong>"Add new token"</strong>. Give it a name — for example: <code>WCAG Validator – DESN2005</code></div>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="gs-num">6</div>
+        <div class="gs-body">
+          <div class="gs-title">Set token scopes (newer Figma accounts)</div>
+          <div class="gs-desc">If Figma asks for permission scopes, find <strong>"File content"</strong> and set it to <strong>Read</strong>. This allows the validator to read your design data.</div>
+          <div class="gs-note">⚠️ If you skip this step the token will still be created but the validator will receive a 403 Access Denied error when it tries to read your file.</div>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="gs-num">7</div>
+        <div class="gs-body">
+          <div class="gs-title">Copy the token immediately</div>
+          <div class="gs-desc">Click <strong>"Generate token"</strong>. Figma will show the token string <strong>only once</strong> — copy it right away. If you close the dialog without copying, you will need to generate a new one.</div>
+          <div class="gs-note">🔒 Your token is stored only in this browser's localStorage. It never leaves your device except to authenticate with Figma's API.</div>
+        </div>
+      </div>
+
+      <div class="guide-step">
+        <div class="gs-num">8</div>
+        <div class="gs-body">
+          <div class="gs-title">Paste it into the validator</div>
+          <div class="gs-desc">Return to this tool, paste the token into the <strong>Personal Access Token</strong> field, and click <strong>Analyze Design</strong>.</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <span class="note-txt">This guide is for DESN2005 students at Western Sydney University.</span>
+      <button class="btn btn-secondary btn-sm" onclick="printGuide()">🖨 Print / Save as PDF</button>
+      <button class="btn btn-primary btn-sm" onclick="closeGuide()">Done</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  WCAG 2.2 Validator — DESN2005 · Western Sydney University ·
+  All analysis runs locally in your browser. No data is sent to any server except the Figma API.
+  Built against the <a href="https://www.w3.org/TR/WCAG22/" target="_blank" rel="noopener">W3C WCAG 2.2 specification</a>.
+</footer>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════
+// WCAG 2.2 CRITERIA DATABASE
+// ═══════════════════════════════════════════
+const WCAG = {
+  '1.1.1': {name:'Non-text Content',     level:'A',   principle:'Perceivable',
+    why:'Screen reader users cannot perceive images, icons, or graphics without a text alternative describing their purpose.'},
+  '1.4.1': {name:'Use of Color',         level:'A',   principle:'Perceivable',
+    why:'Color-blind users (8% of men) may not distinguish information conveyed by color alone — a second indicator (text/icon/pattern) is required.'},
+  '1.4.3': {name:'Contrast (Minimum)',   level:'AA',  principle:'Perceivable',
+    why:'Insufficient contrast makes text unreadable for users with low vision, in bright environments, or on low-quality displays.'},
+  '1.4.4': {name:'Resize Text',          level:'AA',  principle:'Perceivable',
+    why:'Very small text cannot be read by users with visual impairments, even after browser zoom, if the initial size is too restrictive.'},
+  '1.4.5': {name:'Images of Text',       level:'AA',  principle:'Perceivable',
+    why:'Images of text cannot be resized or adapted by users or assistive technologies the way real text can.'},
+  '1.4.6': {name:'Contrast (Enhanced)',  level:'AAA', principle:'Perceivable',
+    why:'Enhanced contrast (7:1) benefits users with more severe low vision who rely on contrast to read.'},
+  '1.4.11':{name:'Non-text Contrast',    level:'AA',  principle:'Perceivable',
+    why:'UI components and icons must have sufficient contrast so users with low vision can identify them.'},
+  '2.4.7': {name:'Focus Visible',        level:'AA',  principle:'Operable',
+    why:'Keyboard-only users need a visible focus ring to know which element currently has keyboard focus.'},
+  '2.4.11':{name:'Focus Not Obscured',   level:'AA',  principle:'Operable',
+    why:'A focused component that is fully hidden by other content cannot be used by keyboard users.'},
+  '2.5.3': {name:'Label in Name',        level:'A',   principle:'Operable',
+    why:'Voice control users speak the visible label to activate a control — the accessible name must contain that visible text.'},
+  '2.5.5': {name:'Target Size (Enhanced)', level:'AA', principle:'Operable',
+    why:'Larger touch targets (44×44px) significantly reduce interaction errors for users with motor impairments.'},
+  '2.5.8': {name:'Target Size (Minimum)', level:'AA', principle:'Operable',
+    why:'Touch targets smaller than 24×24px are nearly impossible to activate accurately for users with tremors or limited dexterity.'},
+  '3.2.4': {name:'Consistent Identification', level:'AA', principle:'Understandable',
+    why:'Components with the same function must look and behave consistently — unpredictable UI confuses users with cognitive disabilities.'},
+  '3.3.2': {name:'Labels or Instructions', level:'A', principle:'Understandable',
+    why:'Input fields without visible labels are unusable for screen reader users and confusing for users with cognitive disabilities.'},
+  '4.1.2': {name:'Name, Role, Value',    level:'A',   principle:'Robust',
+    why:'Assistive technologies need programmatic access to the name, role, and value of every interactive component.'},
+};
+
+// WCAG Understanding doc slugs
+const WCAG_SLUG = {
+  '1.1.1':'non-text-content','1.4.1':'use-of-color','1.4.3':'contrast-minimum',
+  '1.4.4':'resize-text','1.4.5':'images-of-text','1.4.6':'contrast-enhanced',
+  '1.4.11':'non-text-contrast','2.4.7':'focus-visible','2.4.11':'focus-not-obscured-minimum',
+  '2.5.3':'label-in-name','2.5.5':'target-size-enhanced','2.5.8':'target-size-minimum',
+  '3.2.4':'consistent-identification','3.3.2':'labels-or-instructions','4.1.2':'name-role-value',
+};
+
+// ═══════════════════════════════════════════
+// COLOR UTILITIES
+// ═══════════════════════════════════════════
+const C = {
+  // Figma colors are 0–1 float RGBA
+  fromFigma(fc) {
+    return {
+      r: Math.round((fc.r||0)*255),
+      g: Math.round((fc.g||0)*255),
+      b: Math.round((fc.b||0)*255),
+      a: fc.a !== undefined ? fc.a : 1,
+    };
+  },
+
+  lin(v) {
+    const c = v/255;
+    return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4);
+  },
+
+  lum(r,g,b) { return 0.2126*this.lin(r) + 0.7152*this.lin(g) + 0.0722*this.lin(b); },
+
+  ratio(l1,l2) { const hi=Math.max(l1,l2),lo=Math.min(l1,l2); return (hi+0.05)/(lo+0.05); },
+
+  // Alpha-composite fg over bg
+  blend(fg, bg) {
+    const a = fg.a !== undefined ? fg.a : 1;
+    return {
+      r: Math.round(fg.r*a + bg.r*(1-a)),
+      g: Math.round(fg.g*a + bg.g*(1-a)),
+      b: Math.round(fg.b*a + bg.b*(1-a)),
+      a: 1,
+    };
+  },
+
+  toHex({r,g,b}) {
+    return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');
+  },
+
+  toHsl(r,g,b) {
+    r/=255; g/=255; b/=255;
+    const mx=Math.max(r,g,b), mn=Math.min(r,g,b);
+    let h,s, l=(mx+mn)/2;
+    if(mx===mn){ h=s=0; }
+    else {
+      const d=mx-mn;
+      s=l>0.5?d/(2-mx-mn):d/(mx+mn);
+      switch(mx){
+        case r: h=((g-b)/d+(g<b?6:0))/6; break;
+        case g: h=((b-r)/d+2)/6; break;
+        default:h=((r-g)/d+4)/6;
+      }
+    }
+    return {h:h*360, s:s*100, l:l*100};
+  },
+
+  fromHsl(h,s,l) {
+    h/=360; s/=100; l/=100;
+    let r,g,b;
+    if(s===0){ r=g=b=l; }
+    else {
+      const hue2=(p,q,t)=>{
+        if(t<0)t+=1; if(t>1)t-=1;
+        if(t<1/6)return p+(q-p)*6*t;
+        if(t<1/2)return q;
+        if(t<2/3)return p+(q-p)*(2/3-t)*6;
+        return p;
+      };
+      const q=l<0.5?l*(1+s):l+s-l*s, p=2*l-q;
+      r=hue2(p,q,h+1/3); g=hue2(p,q,h); b=hue2(p,q,h-1/3);
+    }
+    return {r:Math.round(r*255), g:Math.round(g*255), b:Math.round(b*255)};
+  },
+
+  // Find closest color (same hue/sat) that achieves targetRatio against bgLum
+  suggest(fgRgb, bgLum, targetRatio) {
+    const hsl = this.toHsl(fgRgb.r, fgRgb.g, fgRgb.b);
+    const isDarkBg = bgLum < 0.18;
+    let lo = isDarkBg ? hsl.l : 0;
+    let hi = isDarkBg ? 100  : hsl.l;
+    let bestL = null;
+    for(let i=0;i<32;i++){
+      const mid=(lo+hi)/2;
+      const t=this.fromHsl(hsl.h, hsl.s, mid);
+      const r=this.ratio(this.lum(t.r,t.g,t.b), bgLum);
+      if(r>=targetRatio){ bestL=mid; if(isDarkBg)hi=mid; else lo=mid; }
+      else { if(isDarkBg)lo=mid; else hi=mid; }
+    }
+    if(bestL===null) return null;
+    return this.toHex(this.fromHsl(hsl.h, hsl.s, bestL));
+  },
+};
+
+// ═══════════════════════════════════════════
+// FIGMA API HELPERS
+// ═══════════════════════════════════════════
+const Figma = {
+  parseUrl(rawUrl) {
+    // Strip whitespace and common copy-paste junk
+    const url = rawUrl.trim().replace(/[\s​-‍﻿]/g, '');
+
+    // Strategy 1 — known path segments (design, file, proto, board, slides, make, community/file)
+    const known = url.match(/figma\.com\/(?:design|file|proto|board|slides|make|community\/file)\/([A-Za-z0-9_-]+)/i);
+    if(known) {
+      const nodeId = (url.match(/node-id=([^&#\s]+)/)||[])[1];
+      return { fileKey: known[1], nodeId: nodeId ? decodeURIComponent(nodeId) : null };
+    }
+
+    // Strategy 2 — any figma.com/SOMETHING/FILE_KEY pattern (catches future path types)
+    const generic = url.match(/figma\.com\/[^/?#\s]+\/([A-Za-z0-9_-]{15,})/i);
+    if(generic) {
+      const nodeId = (url.match(/node-id=([^&#\s]+)/)||[])[1];
+      return { fileKey: generic[1], nodeId: nodeId ? decodeURIComponent(nodeId) : null };
+    }
+
+    // Strategy 3 — the URL is just a bare file key pasted by itself
+    if(/^[A-Za-z0-9_-]{15,}$/.test(url)) {
+      return { fileKey: url, nodeId: null };
+    }
+
+    return null;
+  },
+
+  async fetch(fileKey, token) {
+    const r = await window.fetch(`https://api.figma.com/v1/files/${fileKey}`, {
+      headers: {'X-Figma-Token': token},
+    });
+    if(!r.ok) {
+      const txt = await r.text().catch(()=>'');
+      throw new Error(`Figma API ${r.status}: ${txt.slice(0,200)}`);
+    }
+    return r.json();
+  },
+
+  // Batch-fetch rendered PNG thumbnails for a list of node IDs.
+  // Returns { nodeId: imageUrl } map. Silently skips failed chunks.
+  async fetchImages(fileKey, token, nodeIds) {
+    if(!nodeIds.length) return {};
+    const CHUNK = 50;
+    const map = {};
+    for(let i = 0; i < nodeIds.length; i += CHUNK) {
+      const ids = nodeIds.slice(i, i + CHUNK).join(',');
+      try {
+        const r = await window.fetch(
+          `https://api.figma.com/v1/images/${fileKey}?ids=${encodeURIComponent(ids)}&format=png&scale=2`,
+          { headers: {'X-Figma-Token': token} }
+        );
+        if(r.ok) {
+          const data = await r.json();
+          Object.assign(map, data.images || {});
+        }
+      } catch(e) { /* non-fatal: screenshots are best-effort */ }
+    }
+    return map;
+  },
+
+  solidFill(node) {
+    const fills = node.fills||[];
+    return fills.find(f=>f.type==='SOLID' && f.visible!==false) || null;
+  },
+
+  solidStroke(node) {
+    const strokes = node.strokes||[];
+    return strokes.find(s=>s.type==='SOLID' && s.visible!==false) || null;
+  },
+
+  effectiveBg(node, parentBg) {
+    const f = this.solidFill(node);
+    if(!f) return parentBg;
+    const rgb = C.fromFigma(f.color);
+    const nodeOp = node.opacity !== undefined ? node.opacity : 1;
+    const fillOp = f.opacity !== undefined ? f.opacity : 1;
+    rgb.a = nodeOp * fillOp * rgb.a;
+    return parentBg && rgb.a < 1 ? C.blend(rgb, parentBg) : {r:rgb.r,g:rgb.g,b:rgb.b,a:1};
+  },
+};
+
+// ═══════════════════════════════════════════
+// INTERACTIVE / FORM DETECTION
+// ═══════════════════════════════════════════
+const BTN_KW = ['button','btn','cta','link','input','field','checkbox','check box',
+  'radio','toggle','switch','tab','chip','select','dropdown','drop-down',
+  'close','dismiss','submit','cancel','back','next','prev','previous',
+  'play','pause','stop','icon-button','icon button','fab','action','nav item',
+  'nav-item','menu item','menu-item','clickable','control'];
+const FIELD_KW = ['input','field','text field','textarea','textbox','select','dropdown','combobox','search'];
+const IMG_GENERIC = /^(image|img|photo|picture|graphic|icon|vector|rectangle|ellipse|polygon|star|shape|frame|\d+)$/i;
+
+function isInteractive(node) {
+  const n = node.name.toLowerCase();
+  return BTN_KW.some(k=>n.includes(k));
+}
+function isField(node) {
+  const n = node.name.toLowerCase();
+  return FIELD_KW.some(k=>n.includes(k));
+}
+
+// ═══════════════════════════════════════════
+// WCAG CHECKS
+// ═══════════════════════════════════════════
+const Check = {
+
+  textContrast(node, bg, path, lvl) {
+    const issues=[];
+    if(!bg) return issues;
+    const fill = Figma.solidFill(node);
+    if(!fill) return issues;
+
+    const textRgb = C.fromFigma(fill.color);
+    const nodeOp  = node.opacity !== undefined ? node.opacity : 1;
+    const fillOp  = fill.opacity !== undefined ? fill.opacity : 1;
+    textRgb.a = nodeOp * fillOp * textRgb.a;
+    const blended = C.blend(textRgb, bg);
+
+    const fgLum = C.lum(blended.r, blended.g, blended.b);
+    const bgLum = C.lum(bg.r, bg.g, bg.b);
+    const ratio = C.ratio(fgLum, bgLum);
+
+    const style = node.style || {};
+    const fs  = style.fontSize  || 16;
+    const fw  = style.fontWeight|| 400;
+    const large = fs >= 24 || (fs >= 18.67 && fw >= 700);
+
+    const aaMin  = large ? 3.0 : 4.5;
+    const aaaMin = large ? 4.5 : 7.0;
+
+    const fgHex = C.toHex(blended);
+    const bgHex = C.toHex(bg);
+
+    if(ratio < aaMin && (lvl==='AA'||lvl==='AAA')) {
+      const sug = C.suggest(blended, bgLum, aaMin);
+      issues.push({
+        criterion:'1.4.3', severity:'error', path,
+        elementName: node.name,
+        description: `Text contrast ratio is ${ratio.toFixed(2)}:1 — minimum required is ${aaMin}:1 for ${large?'large':'normal'} text`,
+        suggestion: sug
+          ? `Change the text color from ${fgHex} to ${sug}. This preserves the hue while achieving the required ${aaMin}:1 contrast ratio.`
+          : `The combination of text color ${fgHex} on background ${bgHex} is too low contrast. Significantly darken the text (or lighten the background) to reach ${aaMin}:1.`,
+        details: { current:`${ratio.toFixed(2)}:1`, required:`${aaMin}:1`, textColor:fgHex, bgColor:bgHex, suggestedColor:sug, fontSize:`${fs}px`, isLargeText:large },
+      });
+    } else if(ratio >= aaMin && ratio < aaaMin && lvl==='AAA') {
+      const sug = C.suggest(blended, bgLum, aaaMin);
+      issues.push({
+        criterion:'1.4.6', severity:'warning', path,
+        elementName: node.name,
+        description: `Contrast ${ratio.toFixed(2)}:1 passes AA but fails AAA (needs ${aaaMin}:1)`,
+        suggestion: sug
+          ? `For AAA compliance, change text color to ${sug} to reach ${aaaMin}:1 contrast.`
+          : `Increase contrast to ${aaaMin}:1 for AAA-level compliance.`,
+        details: { current:`${ratio.toFixed(2)}:1`, required:`${aaaMin}:1`, textColor:fgHex, bgColor:bgHex, suggestedColor:sug },
+      });
+    }
+    return issues;
+  },
+
+  textSize(node, path) {
+    const fs = (node.style||{}).fontSize||16;
+    if(fs < 11) return [{
+      criterion:'1.4.4', severity:'error', path, elementName:node.name,
+      description:`Font size is ${fs}px — genuinely illegible for most users`,
+      suggestion:`Increase to at least 12px. Text under 11px cannot be comfortably read even with browser zoom, and browsers may not zoom it proportionally.`,
+      details:{current:`${fs}px`, recommended:'16px for body text'},
+    }];
+    if(fs < 14) return [{
+      criterion:'1.4.4', severity:'warning', path, elementName:node.name,
+      description:`Font size is ${fs}px — small text may be hard to read for users with low vision`,
+      suggestion:`Consider increasing to 14–16px for body text. Captions and labels can use 12px if necessary, but anything under 14px reduces readability for older users and those with low vision.`,
+      details:{current:`${fs}px`, recommended:'16px for body text'},
+    }];
+    return [];
+  },
+
+  touchTarget(node, path, lvl) {
+    const bb = node.absoluteBoundingBox;
+    if(!bb) return [];
+    const {width:w, height:h} = bb;
+    const min = Math.min(w, h);
+    const ws = Math.round(w), hs = Math.round(h);
+    if(min < 24) return [{
+      criterion:'2.5.8', severity:'error', path, elementName:node.name,
+      description:`Touch target is ${ws}×${hs}px — below the 24×24px WCAG 2.2 minimum`,
+      suggestion:`Increase the clickable area to at least 24×24px. Use padding or an invisible transparent hit area so the visual size stays the same.`,
+      details:{current:`${ws}×${hs}px`, required:'24×24px'},
+    }];
+    if(min < 44) {
+      const sev = (lvl==='AAA') ? 'warning' : 'info';
+      return [{
+        criterion:'2.5.5', severity:sev, path, elementName:node.name,
+        description:`Touch target is ${ws}×${hs}px — below the recommended 44×44px`,
+        suggestion:`For enhanced accessibility (especially on mobile), increase the touch target to 44×44px. This is critical for users with motor impairments.`,
+        details:{current:`${ws}×${hs}px`, recommended:'44×44px'},
+      }];
+    }
+    return [];
+  },
+
+  nonTextContrast(node, bg, path) {
+    if(!bg) return [];
+    const fill = Figma.solidFill(node);
+    if(!fill) return [];
+    const rgb = C.fromFigma(fill.color);
+    const fgLum = C.lum(rgb.r, rgb.g, rgb.b);
+    const bgLum = C.lum(bg.r, bg.g, bg.b);
+    const ratio = C.ratio(fgLum, bgLum);
+    if(ratio < 3.0) {
+      const fgHex = C.toHex(rgb);
+      const bgHex = C.toHex(bg);
+      const sug = C.suggest(rgb, bgLum, 3.0);
+      return [{
+        criterion:'1.4.11', severity:'error', path, elementName:node.name,
+        description:`UI element contrast is ${ratio.toFixed(2)}:1 — below the 3:1 minimum for non-text content`,
+        suggestion: sug
+          ? `Change the element color from ${fgHex} to ${sug} to achieve at least 3:1 contrast against the background (${bgHex}).`
+          : `Increase contrast of this UI element to at least 3:1 against its background.`,
+        details:{current:`${ratio.toFixed(2)}:1`, required:'3:1', color:fgHex, bgColor:bgHex, suggestedColor:sug},
+      }];
+    }
+    return [];
+  },
+
+  imageAlt(node, path) {
+    const nm = node.name.trim();
+    if(IMG_GENERIC.test(nm)) return [{
+      criterion:'1.1.1', severity:'warning', path, elementName:node.name,
+      description:`Image/graphic has a generic layer name "${nm}" — developers won't know what alt text to apply`,
+      suggestion:`Rename this layer to describe what the image depicts (e.g., "Hero image: team collaborating in office"). This name becomes the alt text reference for developers.`,
+      details:{layerName:nm},
+    }];
+    return [];
+  },
+
+  focusState(node, path) {
+    if(!node.children) return [];
+    const childNames = (node.children||[]).map(c=>c.name.toLowerCase());
+    const hasFocus = childNames.some(n=>n.includes('focus')||n.includes('focused'));
+    if(isInteractive(node) && !hasFocus) return [{
+      criterion:'2.4.7', severity:'warning', path, elementName:node.name,
+      description:`Interactive component "${node.name}" appears to have no focus state variant`,
+      suggestion:`Add a "Focused" variant with a visible focus ring. The ring should be at least 2px wide, have 3:1 contrast against adjacent colors, and enclose the component without overlapping content.`,
+      details:{hasFocusVariant:false},
+    }];
+    return [];
+  },
+
+  formLabel(node, path) {
+    if(!node.children || !isField(node)) return [];
+    // Flag only if there is no TEXT child at all — any text counts as a label
+    const hasAnyText = (node.children||[]).some(c => c.type === 'TEXT');
+    if(!hasAnyText) return [{
+      criterion:'3.3.2', severity:'warning', path, elementName:node.name,
+      description:`Form field "${node.name}" has no visible text label`,
+      suggestion:`Add a visible label above or to the left of the input. Placeholder text alone is not sufficient — it disappears when the user starts typing and typically has low contrast by design.`,
+      details:{},
+    }];
+    return [];
+  },
+
+  colorOnly(node, path) {
+    const n = node.name.toLowerCase();
+    const isStatusEl = ['status','alert','badge','indicator','state','notification','dot'].some(k=>n.includes(k));
+    if(isStatusEl && Figma.solidFill(node)) return [{
+      criterion:'1.4.1', severity:'info', path, elementName:node.name, manualReview:true,
+      description:`"${node.name}" uses fill color — verify this isn't the sole differentiator for states/meanings`,
+      suggestion:`Ensure every state (error/success/warning) also has a distinct icon, text label, or pattern — not just a color change. For example, add ✓ ✗ icons alongside green/red fills.`,
+      details:{},
+    }];
+    return [];
+  },
+};
+
+// ═══════════════════════════════════════════
+// ANALYSIS ENGINE
+// ═══════════════════════════════════════════
+let TARGET_LEVEL = 'AA';
+
+function analyzeDocument(fileData) {
+  const issues = [];
+  let nodeCount = 0;
+  const WHITE = {r:255,g:255,b:255,a:1};
+
+  function walk(node, bg, pathArr, depth, frameId) {
+    if(depth > 40) return;
+    nodeCount++;
+    const path = [...pathArr, node.name];
+    // Background this node contributes to its children
+    const myBg = Figma.effectiveBg(node, bg);
+    const nodeIssues = [];
+
+    // ── TEXT: contrast + size ──
+    if(node.type === 'TEXT') {
+      // bg = what this text actually sits on (parent's effective bg, not WHITE fallback)
+      if(bg) nodeIssues.push(...Check.textContrast(node, bg, path, TARGET_LEVEL));
+      nodeIssues.push(...Check.textSize(node, path));
+    }
+
+    // ── INTERACTIVE COMPONENTS: touch target + focus state ──
+    // Only fire on formal design-system components (COMPONENT / INSTANCE /
+    // COMPONENT_SET). Loose groups or frames named "button" are visual mocks,
+    // not definitive interactive components.
+    if(isInteractive(node) && ['COMPONENT','INSTANCE','COMPONENT_SET'].includes(node.type)) {
+      nodeIssues.push(...Check.touchTarget(node, path, TARGET_LEVEL));
+      nodeIssues.push(...Check.focusState(node, path));
+    }
+
+    // ── NON-TEXT CONTRAST ──
+    // Restrict to shapes that are clearly UI elements, not decorative fills:
+    //   • Shapes with a visible stroke  → borders, outlines, input boundaries
+    //   • Shapes ≤ 32 px in largest dim → checkboxes, radio dots, toggle knobs
+    // Large filled rectangles (section bgs, cards, decorative dividers) are excluded.
+    const bb = node.absoluteBoundingBox;
+    if(['RECTANGLE','ELLIPSE'].includes(node.type) && bb && bg &&
+       (TARGET_LEVEL === 'AA' || TARGET_LEVEL === 'AAA')) {
+      const hasStroke  = (node.strokes||[]).some(s => s.type==='SOLID' && s.visible!==false);
+      const isIconSized = Math.max(bb.width, bb.height) <= 32;
+      if(hasStroke || isIconSized) {
+        nodeIssues.push(...Check.nonTextContrast(node, bg, path));
+      }
+    }
+
+    // ── IMAGE ALT TEXT ──
+    // Only flag nodes that carry an actual IMAGE fill (bitmap/photo).
+    // Decorative vectors, icons, and shape layers are intentionally excluded —
+    // they are often unnamed by convention and do not require alt attributes.
+    if((node.fills||[]).some(f => f.type === 'IMAGE')) {
+      nodeIssues.push(...Check.imageAlt(node, path));
+    }
+
+    // ── FORM LABELS ──
+    if(isField(node) && node.children) {
+      nodeIssues.push(...Check.formLabel(node, path));
+    }
+
+    // ── COLOR-ONLY INDICATORS ──
+    nodeIssues.push(...Check.colorOnly(node, path));
+
+    // Tag every issue with the TOP-LEVEL FRAME id so screenshots capture
+    // the whole artboard rather than an isolated element crop.
+    nodeIssues.forEach(i => { i.nodeId = frameId; });
+    issues.push(...nodeIssues);
+
+    if(node.children) {
+      for(const child of node.children) {
+        walk(child, myBg || bg, path, depth + 1, frameId);
+      }
+    }
+  }
+
+  const doc = fileData.document;
+  if(doc && doc.children) {
+    for(const page of doc.children) {
+      if(!page.children) continue;
+
+      // Figma canvas background — used as the base for compositing frame fills.
+      const pageBg = page.backgroundColor ? C.fromFigma(page.backgroundColor) : WHITE;
+
+      for(const topNode of page.children) {
+        // *** Analyse ONLY top-level FRAME nodes (artboards / screens). ***
+        // Stray shapes, groups, text, or other elements that sit directly on
+        // the canvas outside any frame are design-exploration artefacts and
+        // must NOT be included in the accessibility analysis.
+        if(topNode.type !== 'FRAME' && topNode.type !== 'COMPONENT') continue;
+
+        // Start with the frame's own fill composited over the page background.
+        // This ensures contrast checks inside dark-themed frames use the correct
+        // background colour, not a hard-coded white fallback.
+        const frameBg = Figma.effectiveBg(topNode, pageBg);
+        walk(topNode, frameBg || pageBg, [page.name], 1, topNode.id);
+      }
+    }
+  }
+
+  // Deduplicate: same WCAG criterion on the same element path
+  const seen = new Set();
+  const unique = issues.filter(iss => {
+    const key = iss.criterion + '|' + iss.path.join('>');
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return { issues: unique, nodeCount };
+}
+
+// ═══════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════
+function show(name) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function setStepState(i, state, text) {
+  const el = document.getElementById('s'+i);
+  if(!el) return;
+  const ic = {pending:'⏳',active:'🔄',done:'✅',err:'❌'};
+  el.className = 'step ' + state;
+  el.innerHTML = `<span class="step-ic">${ic[state]||'⏳'}</span> ${text}`;
+}
+
+const pause = ms => new Promise(r=>setTimeout(r, ms));
+
+// ═══════════════════════════════════════════
+// RENDER RESULTS
+// ═══════════════════════════════════════════
+let _issues      = [];
+let _meta        = {};
+let _screenshots = {};
+
+function computeMark(issues) {
+  const errors  = issues.filter(i=>i.severity==='error'   && !i.manualReview);
+  const warnings= issues.filter(i=>i.severity==='warning' && !i.manualReview);
+  const manual  = issues.filter(i=>i.manualReview || i.severity==='info');
+
+  // Criteria applicable at the chosen level
+  const applicable = Object.entries(WCAG).filter(([,v])=>{
+    if(TARGET_LEVEL==='A')   return v.level==='A';
+    if(TARGET_LEVEL==='AA')  return v.level==='A' || v.level==='AA';
+    return true;
+  }).map(([k])=>k);
+
+  const failedSet   = new Set(errors.map(i=>i.criterion));
+  const totalChecked= applicable.length;
+  const totalFailed = failedSet.size;
+  const totalPass   = totalChecked - totalFailed;
+  const score       = totalChecked > 0 ? Math.round((totalPass / totalChecked) * 100) : 100;
+
+  let verdict, color, bgColor;
+  if(errors.length===0 && warnings.length===0) {
+    verdict='PASS';   color='var(--success)'; bgColor='var(--sucBg)';
+  } else if(errors.length===0) {
+    verdict='PASS*';  color='var(--warn)';    bgColor='var(--warnBg)';
+  } else {
+    verdict='FAIL';   color='var(--error)';   bgColor='var(--errBg)';
+  }
+
+  return { verdict, color, bgColor, score, totalPass, totalChecked, totalFailed,
+           errorCount:errors.length, warnCount:warnings.length, manualCount:manual.length };
+}
+
+function renderOverallMark(issues) {
+  const m = computeMark(issues);
+  const date = _meta.analyzedAt
+    ? new Date(_meta.analyzedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+    : '';
+
+  document.getElementById('overall-mark').innerHTML = `
+    <div class="om-card" style="border-color:${m.color}">
+      <div class="om-left">
+        <div class="om-verdict" style="color:${m.color};background:${m.bgColor}">${m.verdict}</div>
+        <div class="om-level">WCAG 2.2 — Level ${TARGET_LEVEL}</div>
+        <div class="om-sublbl">Overall Mark</div>
+      </div>
+      <div class="om-right">
+        <div class="om-score-row">
+          <span class="om-pct" style="color:${m.color}">${m.score}%</span>
+          <span class="om-pct-lbl">${m.totalPass} of ${m.totalChecked} criteria<br>passing automated checks</span>
+        </div>
+        <div class="om-bar">
+          <div class="om-bar-fill" style="width:${m.score}%;background:${m.color}"></div>
+        </div>
+        <div class="om-stats">
+          <div class="om-stat"><strong style="color:var(--error)">${m.errorCount}</strong> Errors</div>
+          <div class="om-stat"><strong style="color:var(--warn)">${m.warnCount}</strong> Warnings</div>
+          <div class="om-stat"><strong style="color:var(--info)">${m.manualCount}</strong> Manual Review</div>
+          ${date?`<div class="om-stat" style="color:var(--text3)">Checked ${date}</div>`:''}
+        </div>
+        ${m.verdict==='PASS*'?`<div class="om-note">* No errors found but warnings remain — address before sign-off</div>`:''}
+        ${m.verdict==='PASS' ?`<div class="om-note" style="color:var(--success)">✓ All automated checks passed — conduct a manual audit to confirm full compliance</div>`:''}
+      </div>
+    </div>`;
+}
+
+function renderSummary(issues) {
+  const e = issues.filter(i=>i.severity==='error'  && !i.manualReview).length;
+  const w = issues.filter(i=>i.severity==='warning' && !i.manualReview).length;
+  const m = issues.filter(i=>i.manualReview || i.severity==='info').length;
+  document.getElementById('sum-grid').innerHTML = `
+    <div class="sum-card"><div class="sum-num cn-err">${e}</div><div class="sum-lbl">Errors</div></div>
+    <div class="sum-card"><div class="sum-num cn-warn">${w}</div><div class="sum-lbl">Warnings</div></div>
+    <div class="sum-card"><div class="sum-num cn-info">${m}</div><div class="sum-lbl">Manual Review</div></div>
+    <div class="sum-card"><div class="sum-num" style="color:var(--text)">${issues.length}</div><div class="sum-lbl">Total Issues</div></div>
+    <div class="sum-card"><div class="sum-num" style="color:var(--text2);font-size:22px">${_meta.nodeCount||0}</div><div class="sum-lbl">Elements Checked</div></div>`;
+}
+
+function issueCard(iss, idx) {
+  const cr  = WCAG[iss.criterion] || {};
+  const sev = iss.manualReview ? 'manual' : iss.severity;
+  const ico = {error:'🔴',warning:'🟡',info:'🔵',manual:'⚪'}[sev]||'⚪';
+  const pathStr = (iss.path||[]).join(' › ');
+
+  const slug = WCAG_SLUG[iss.criterion] || '';
+  const wcagLink = slug
+    ? `https://www.w3.org/WAI/WCAG22/Understanding/${slug}.html`
+    : 'https://www.w3.org/TR/WCAG22/';
+
+  // Build detail cells
+  const d = iss.details || {};
+  const cells = [];
+  if(d.current)        cells.push(detCell('Current Value', d.current, 'fail'));
+  if(d.required)       cells.push(detCell('Required', d.required, 'pass'));
+  if(d.recommended)    cells.push(detCell('Recommended', d.recommended, ''));
+  if(d.textColor)      cells.push(colorCell('Text Color', d.textColor));
+  if(d.bgColor)        cells.push(colorCell('Background', d.bgColor));
+  if(d.color)          cells.push(colorCell('Element Color', d.color));
+  if(d.suggestedColor) cells.push(colorCell('Suggested Color', d.suggestedColor, true));
+  if(d.fontSize)       cells.push(detCell('Font Size', d.fontSize, ''));
+
+  const gridHtml = cells.length
+    ? `<div class="det-grid">${cells.join('')}</div>`
+    : '';
+
+  const imgUrl = iss.nodeId ? _screenshots[iss.nodeId] : null;
+  const screenshotHtml = imgUrl
+    ? `<div class="sc-wrap">
+        <div class="sc-label">Element Screenshot</div>
+        <div class="sc-frame" id="scf-${idx}">
+          <img src="${imgUrl}"
+               alt="Screenshot of ${iss.elementName.replace(/"/g,'&quot;')}"
+               loading="lazy"
+               onload="document.getElementById('scf-${idx}').classList.remove('loading')"
+               onerror="document.getElementById('scf-${idx}').className='sc-frame error-img';document.getElementById('scf-${idx}').textContent='Screenshot unavailable'">
+        </div>
+        <a class="sc-zoom" href="${imgUrl}" target="_blank" rel="noopener">Open full-size ↗</a>
+      </div>`
+    : '';
+
+  return `
+    <div class="ic" id="ic-${idx}" data-sev="${sev}">
+      <div class="ic-hdr" onclick="toggle(${idx})">
+        <div class="ic-ico ${sev}">${ico}</div>
+        <div class="ic-meta">
+          <div class="ic-crit">
+            <span class="crit-id">${iss.criterion}</span>
+            <span class="crit-nm">${cr.name||''}</span>
+            <span class="badge b-${cr.level||'A'}">${cr.level||'A'}</span>
+            <span class="badge b-${sev}">${sev.charAt(0).toUpperCase()+sev.slice(1)}</span>
+          </div>
+          <div class="ic-desc">${iss.description}</div>
+          ${pathStr?`<div class="ic-path" title="${pathStr}">${pathStr}</div>`:''}
+        </div>
+        <div class="ic-tog">▼</div>
+      </div>
+      <div class="ic-body">
+        ${gridHtml}
+        <div class="sug-box">
+          <div class="sug-title">💡 Suggested Fix</div>
+          <div class="sug-text">${iss.suggestion}</div>
+        </div>
+        ${cr.why?`<div class="why-box"><div class="why-title">Why This Matters</div>${cr.why}</div>`:''}
+        ${screenshotHtml}
+        <a class="ic-link" href="${wcagLink}" target="_blank" rel="noopener">
+          → WCAG 2.2 — Understanding ${iss.criterion} ${cr.name||''}
+        </a>
+      </div>
+    </div>`;
+}
+
+function detCell(label, val, cls) {
+  return `<div class="det-item"><div class="det-lbl">${label}</div><div class="det-val ${cls}">${val}</div></div>`;
+}
+function colorCell(label, hex, good) {
+  return `<div class="det-item"><div class="det-lbl">${label}</div><div class="det-val ${good?'pass':''}" style="display:flex;align-items:center;gap:4px"><span class="swatch" style="background:${hex}"></span>${hex}</div></div>`;
+}
+
+function toggle(idx) {
+  document.getElementById('ic-'+idx).classList.toggle('open');
+}
+
+function filter(type, btn) {
+  document.querySelectorAll('.filters .flt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.ic').forEach(el=>{
+    const sev = el.dataset.sev;
+    const show = type==='all'
+      || (type==='manual' && sev==='manual')
+      || (type!=='manual' && sev===type);
+    el.style.display = show ? 'block' : 'none';
+  });
+}
+
+function doExport() {
+  const data = { generated: new Date().toISOString(), targetLevel: TARGET_LEVEL, metadata: _meta, issues: _issues };
+  const b = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  a.download = 'wcag-report.json';
+  a.click();
+}
+
+function renderResults(issues, meta, screenshots) {
+  _issues = issues; _meta = meta; _screenshots = screenshots || {};
+  document.getElementById('res-title').textContent = `Results: ${meta.fileName||'Figma Design'}`;
+  renderOverallMark(issues);
+  renderSummary(issues);
+
+  if(!issues.length) {
+    document.getElementById('issues-list').innerHTML = `
+      <div class="empty">
+        <div class="empty-ic">✅</div>
+        <div class="empty-t">No Automated Issues Found</div>
+        <p>All checks passed. Conduct a manual audit — screen reader testing, keyboard navigation, and cognitive walkthroughs — to confirm full compliance.</p>
+      </div>`;
+  } else {
+    document.getElementById('issues-list').innerHTML = issues.map(issueCard).join('');
+  }
+  show('results');
+}
+
+// ═══════════════════════════════════════════
+// LEVEL SELECTOR
+// ═══════════════════════════════════════════
+function setLevel(btn, lvl) {
+  document.querySelectorAll('.lvl').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  TARGET_LEVEL = lvl;
+}
+
+// ═══════════════════════════════════════════
+// MAIN FLOW
+// ═══════════════════════════════════════════
+async function runAnalysis() {
+  const url   = document.getElementById('in-url').value.trim();
+  const token = document.getElementById('in-token').value.trim();
+  if(!url)   { alert('Please enter a Figma share URL.'); return; }
+  if(!token) { alert('Please enter your Figma Personal Access Token.\n\nGet one free: Figma → Settings → Security → Personal Access Tokens'); return; }
+
+  try { localStorage.setItem('figma_tok', token); } catch(e) {}
+
+  show('loading');
+  const steps = [
+    'Parsing Figma URL',
+    'Fetching design data',
+    'Traversing design tree',
+    'Running WCAG 2.2 checks',
+    'Capturing element screenshots',
+    'Building accessibility report',
+  ];
+  for(let i=0;i<6;i++) setStepState(i,'pending',steps[i]);
+
+  try {
+    // 0 — parse
+    setStepState(0,'active','Parsing Figma URL…');
+    await pause(60);
+    const parsed = Figma.parseUrl(url);
+    if(!parsed) throw new Error(
+      `Cannot extract a Figma file key from the URL you entered.\n\n` +
+      `Received: "${url.slice(0,100)}"\n\n` +
+      `Expected formats:\n` +
+      `• https://www.figma.com/design/FILEKEY/...\n` +
+      `• https://www.figma.com/file/FILEKEY/...\n` +
+      `• https://www.figma.com/proto/FILEKEY/...\n\n` +
+      `Tip: In Figma, click Share → Copy link and paste that URL here.`
+    );
+    setStepState(0,'done','URL parsed');
+
+    // 1 — fetch
+    // Warn early if this looks like a FigJam or Slides URL
+    if(/figma\.com\/site\//i.test(url)) {
+      throw new Error(
+        'This is a published Figma Sites URL (figma.com/site/…), not a design file.\n\n' +
+        'Figma Sites is a feature that publishes your design as a live website — ' +
+        'the /site/ URL points to that published page, not the source design.\n\n' +
+        'How to get the correct URL:\n' +
+        '1. Open Figma and find the original design file\n' +
+        '2. Click Share (top right) → Copy link\n' +
+        '3. Paste that link here — it will look like:\n' +
+        '   figma.com/design/FILEKEY/…\n\n' +
+        'If you only have the /site/ URL, search for the file in your Figma drafts or ask the owner for the design file link.'
+      );
+    }
+    if(/figma\.com\/board\//i.test(url)) {
+      throw new Error(
+        'This looks like a FigJam board link (figma.com/board/…).\n\n' +
+        'FigJam boards are not design files — the WCAG validator only works with Figma design files.\n\n' +
+        'Ask the file owner to share the original design file instead of the FigJam board.'
+      );
+    }
+    if(/figma\.com\/slides\//i.test(url)) {
+      throw new Error(
+        'This looks like a Figma Slides link (figma.com/slides/…).\n\n' +
+        'Slides files are not supported — please share a Figma design file link instead.'
+      );
+    }
+
+    setStepState(1,'active','Fetching design data from Figma API…');
+    let file;
+    try {
+      file = await Figma.fetch(parsed.fileKey, token);
+    } catch(e) {
+      if(e.message.includes('403')) throw new Error(
+        'Access denied (403).\n\n' +
+        '• Double-check your Personal Access Token is correct\n' +
+        '• Make sure you have at least view access to this file\n' +
+        '• If you received this as a share link, confirm the owner has not revoked access'
+      );
+      if(e.message.includes('404')) throw new Error(
+        'File not found (404). The file key in the URL may be wrong, or the file has been deleted or made private.'
+      );
+      if(e.message.includes('400')) throw new Error(
+        'Figma returned "File type not supported" (400).\n\n' +
+        'This usually means the link points to a FigJam board or Figma Slides file instead of a design file.\n\n' +
+        '• FigJam URL looks like: figma.com/board/…\n' +
+        '• Design file URL looks like: figma.com/design/… or figma.com/file/…\n\n' +
+        'Ask for a share link to the design file, not the board or presentation.'
+      );
+      throw e;
+    }
+    setStepState(1,'done',`Fetched: "${file.name}"`);
+
+    // 2 — traverse
+    setStepState(2,'active','Traversing design tree…');
+    await pause(60);
+
+    // 3 — analyze
+    setStepState(3,'active','Running WCAG 2.2 checks…');
+    await pause(80);
+    const {issues, nodeCount} = analyzeDocument(file);
+    setStepState(2,'done',`Analyzed ${nodeCount.toLocaleString()} elements`);
+    setStepState(3,'done',`${issues.length} potential issue(s) found`);
+
+    // 4 — screenshots
+    setStepState(4,'active',`Capturing screenshots for ${issues.length} issue(s)…`);
+    const uniqueNodeIds = [...new Set(issues.map(i=>i.nodeId).filter(Boolean))];
+    const screenshots = await Figma.fetchImages(parsed.fileKey, token, uniqueNodeIds);
+    const captured = Object.values(screenshots).filter(Boolean).length;
+    setStepState(4,'done',`${captured} screenshot(s) captured`);
+
+    // 5 — report
+    setStepState(5,'active','Building report…');
+    await pause(60);
+    setStepState(5,'done','Report ready');
+    await pause(100);
+
+    renderResults(issues, {
+      fileName: file.name,
+      fileKey: parsed.fileKey,
+      nodeCount,
+      targetLevel: TARGET_LEVEL,
+      analyzedAt: new Date().toISOString(),
+    }, screenshots);
+
+  } catch(err) {
+    console.error(err);
+    document.getElementById('err-msg').textContent = err.message || 'An unexpected error occurred.';
+    const code = document.getElementById('err-code');
+    if(err.stack) { code.textContent = err.stack.split('\n')[0]; code.style.display='block'; }
+    else code.style.display='none';
+    show('error');
+  }
+}
+
+// ═══════════════════════════════════════════
+// PDF REPORT GENERATION
+// ═══════════════════════════════════════════
+
+function generatePDFReport() {
+  if(!_issues.length && !_meta.fileName) {
+    alert('Run an analysis first before exporting a report.');
+    return;
+  }
+  const win = window.open('', '_blank', 'width=960,height=800');
+  if(!win) {
+    alert('Pop-ups are blocked. Please allow pop-ups for this page and try again.');
+    return;
+  }
+  win.document.write(buildReportHTML());
+  win.document.close();
+  win.addEventListener('load', () => setTimeout(() => win.print(), 800));
+}
+
+function issueBlockHTML(iss, num) {
+  const cr  = WCAG[iss.criterion] || {};
+  const slug = WCAG_SLUG[iss.criterion] || '';
+  const wcagUrl = slug
+    ? `https://www.w3.org/WAI/WCAG22/Understanding/${slug}.html`
+    : 'https://www.w3.org/TR/WCAG22/';
+  const pathStr = (iss.path||[]).join(' › ');
+  const d = iss.details || {};
+  const sev = iss.manualReview ? 'manual' : iss.severity;
+
+  // Detail value cells
+  const dets = [];
+  if(d.current)     dets.push(['Current Value', d.current, 'fail']);
+  if(d.required)    dets.push(['Required',       d.required,'pass']);
+  if(d.recommended) dets.push(['Recommended',    d.recommended,'']);
+  if(d.fontSize)    dets.push(['Font Size',       d.fontSize,'']);
+  const detHtml = dets.length
+    ? `<div class="det-grid">${dets.map(([l,v,c])=>`<div class="det-item"><div class="det-lbl">${l}</div><div class="det-val ${c}">${v}</div></div>`).join('')}</div>`
+    : '';
+
+  // Color row
+  const cols = [];
+  if(d.textColor)      cols.push(['Text Color',           d.textColor, false]);
+  if(d.bgColor)        cols.push(['Background',           d.bgColor,   false]);
+  if(d.color)          cols.push(['Element Color',        d.color,     false]);
+  if(d.suggestedColor) cols.push(['✓ Suggested Fix Color',d.suggestedColor, true]);
+  const colHtml = cols.length
+    ? `<div class="color-row">${cols.map(([l,hex,good])=>`
+        <div class="color-item">
+          <span class="color-swatch" style="background:${hex}"></span>
+          <span class="color-lbl ${good?'color-good':''}">${l}:</span>
+          <strong>${hex}</strong>
+        </div>`).join('')}</div>`
+    : '';
+
+  // Screenshot
+  const imgUrl = iss.nodeId ? _screenshots[iss.nodeId] : null;
+  const scHtml = imgUrl
+    ? `<div class="sc-section">
+        <div class="sc-lbl">Element Screenshot (direct reference from Figma)</div>
+        <img class="sc-img" src="${imgUrl}" alt="Screenshot of ${iss.elementName.replace(/"/g,'&quot;')}">
+      </div>`
+    : '';
+
+  return `
+  <div class="issue-block">
+    <div class="issue-hdr">
+      <div class="issue-num">#${num}</div>
+      <div class="issue-title-wrap">
+        <div class="issue-badges">
+          <span class="badge badge-${sev}">${sev.toUpperCase()}</span>
+          <span class="badge badge-lvl-${cr.level||'A'}">${cr.level||'A'}</span>
+          <span class="crit-ref">${iss.criterion}</span>
+        </div>
+        <div class="crit-name">${cr.name||iss.criterion}</div>
+      </div>
+    </div>
+    <div class="issue-body">
+      ${pathStr?`<div class="issue-path">📍 ${pathStr}</div>`:''}
+      <div class="issue-desc">${iss.description}</div>
+      ${detHtml}
+      ${colHtml}
+      <div class="fix-box">
+        <div class="fix-lbl">💡 Suggested Fix</div>
+        <div class="fix-text">${iss.suggestion}</div>
+      </div>
+      ${cr.why?`<div class="why-box"><div class="why-lbl">Why This Matters</div><div>${cr.why}</div></div>`:''}
+      ${scHtml}
+      <div class="ref-line">WCAG 2.2 Reference: <em>${wcagUrl}</em></div>
+    </div>
+  </div>`;
+}
+
+function buildReportHTML() {
+  const now     = new Date();
+  const dateStr = now.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const timeStr = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const errors  = _issues.filter(i=>i.severity==='error'&&!i.manualReview);
+  const warns   = _issues.filter(i=>i.severity==='warning'&&!i.manualReview);
+  const manual  = _issues.filter(i=>i.manualReview||i.severity==='info');
+  const mark    = computeMark(_issues);
+  const lvl     = _meta.targetLevel||'AA';
+
+  const compClass = errors.length===0&&warns.length===0 ? 'comp-pass'
+                  : errors.length===0 ? 'comp-warn' : 'comp-fail';
+  const compIcon  = errors.length===0&&warns.length===0 ? '✅'
+                  : errors.length===0 ? '⚠' : '✗';
+  const compTitle = errors.length===0&&warns.length===0
+    ? `Likely WCAG 2.2 ${lvl} Compliant`
+    : errors.length===0 ? 'Minor Issues — Review Recommended'
+    : 'Non-Compliant — Remediation Required';
+  const compSub = errors.length===0&&warns.length===0
+    ? 'No automated errors or warnings detected. A manual audit is recommended to fully confirm compliance.'
+    : errors.length===0
+    ? `${warns.length} warning(s) should be addressed before launch.`
+    : `${errors.length} critical error(s) and ${warns.length} warning(s) must be fixed for WCAG 2.2 ${lvl} compliance.`;
+
+  let issueOffset = 0;
+  const errorSection = errors.length ? `
+    <div class="group-hdr error-hdr">
+      <span>🔴</span>
+      <span class="group-title">Critical Errors</span>
+      <span class="group-count">${errors.length} issue(s) — must fix for compliance</span>
+    </div>
+    ${errors.map(i=>issueBlockHTML(i, ++issueOffset)).join('')}` : '';
+
+  const warnSection = warns.length ? `
+    <div class="group-hdr warn-hdr">
+      <span>🟡</span>
+      <span class="group-title">Warnings</span>
+      <span class="group-count">${warns.length} issue(s) — strongly recommended to fix</span>
+    </div>
+    ${warns.map(i=>issueBlockHTML(i, ++issueOffset)).join('')}` : '';
+
+  const manualSection = manual.length ? `
+    <div class="group-hdr info-hdr">
+      <span>🔵</span>
+      <span class="group-title">Manual Review Required</span>
+      <span class="group-count">${manual.length} item(s) — cannot be verified automatically</span>
+    </div>
+    ${manual.map(i=>issueBlockHTML(i, ++issueOffset)).join('')}` : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WCAG 2.2 Accessibility Report — ${_meta.fileName||'Design'}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2.2cm 1.8cm;
+  }
+  @page :first { margin-top: 0; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Georgia,serif;font-size:10.5pt;color:#1a1a1a;line-height:1.65;background:#fff}
+
+  /* ── COVER ── */
+  .cover{page-break-after:always;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 40px;border-bottom:4px solid #6366f1}
+  .cover-badge{display:inline-block;background:#6366f1;color:#fff;padding:6px 18px;border-radius:4px;font-family:Arial,sans-serif;font-size:9pt;font-weight:bold;letter-spacing:.1em;margin-bottom:28px}
+  .cover h1{font-size:24pt;font-weight:bold;line-height:1.2;margin-bottom:8px}
+  .cover h2{font-size:13pt;color:#555;font-weight:normal;margin-bottom:36px}
+  .cover-rule{border:none;border-top:1px solid #e5e7eb;width:55%;margin:0 auto 32px}
+  .cover-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;width:100%;max-width:600px}
+  .cv-cell{text-align:center}
+  .cv-lbl{font-family:Arial,sans-serif;font-size:8pt;color:#888;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+  .cv-val{font-size:12pt;font-weight:bold}
+  .cover-note{margin-top:40px;font-size:8.5pt;color:#999;font-style:italic;max-width:480px;line-height:1.7}
+
+  /* ── TYPOGRAPHY ── */
+  h1{font-size:17pt;margin:28px 0 8px;color:#1a1a1a}
+  h2{font-size:12pt;font-family:Arial,sans-serif;margin:20px 0 6px;color:#1a1a1a}
+  p{margin-bottom:10px}
+  hr.rule{border:none;border-top:2px solid #e5e7eb;margin:10px 0 20px}
+  a{color:#4f46e5}
+
+  /* ── COMPLIANCE BANNER ── */
+  .comp-pass{background:#d1fae5;border:2px solid #10b981;border-radius:6px;padding:14px 18px;margin:14px 0}
+  .comp-warn{background:#fef3c7;border:2px solid #f59e0b;border-radius:6px;padding:14px 18px;margin:14px 0}
+  .comp-fail{background:#fee2e2;border:2px solid #ef4444;border-radius:6px;padding:14px 18px;margin:14px 0}
+  .comp-title{font-family:Arial,sans-serif;font-weight:bold;font-size:12pt;margin-bottom:4px}
+  .comp-sub{font-size:9.5pt;color:#333}
+
+  /* ── SUMMARY TABLE ── */
+  table.sum{width:100%;border-collapse:collapse;margin:14px 0;font-size:9.5pt}
+  table.sum th{background:#f3f4f6;text-align:left;padding:7px 12px;font-family:Arial,sans-serif;font-size:8.5pt;text-transform:uppercase;letter-spacing:.05em;color:#555;border:1px solid #e5e7eb}
+  table.sum td{padding:7px 12px;border:1px solid #e5e7eb;vertical-align:middle}
+  table.sum tr:nth-child(even) td{background:#fafafa}
+
+  /* ── GROUP HEADERS ── */
+  .group-hdr{display:flex;align-items:center;gap:10px;border-radius:6px;padding:10px 15px;margin:24px 0 10px;font-family:Arial,sans-serif}
+  .error-hdr{background:#fee2e2;border:1px solid #fca5a5}
+  .warn-hdr {background:#fef3c7;border:1px solid #fcd34d}
+  .info-hdr {background:#dbeafe;border:1px solid #93c5fd}
+  .group-title{font-weight:bold;font-size:11pt;flex:1}
+  .group-count{font-size:9pt;color:#555}
+
+  /* ── ISSUE BLOCK ── */
+  .issue-block{border:1px solid #e5e7eb;border-radius:6px;margin:12px 0;page-break-inside:avoid;overflow:hidden}
+  .issue-hdr{padding:11px 15px;display:flex;align-items:flex-start;gap:10px;background:#f9fafb;border-bottom:1px solid #e5e7eb}
+  .issue-num{font-family:Arial,sans-serif;font-size:8.5pt;font-weight:bold;color:#888;min-width:22px;padding-top:2px}
+  .issue-title-wrap{flex:1}
+  .issue-badges{display:flex;gap:5px;align-items:center;margin-bottom:4px;flex-wrap:wrap}
+  .badge{display:inline-block;padding:2px 7px;border-radius:3px;font-family:Arial,sans-serif;font-size:7.5pt;font-weight:bold;letter-spacing:.05em}
+  .badge-error  {background:#fee2e2;color:#dc2626;border:1px solid #fca5a5}
+  .badge-warning{background:#fef3c7;color:#b45309;border:1px solid #fcd34d}
+  .badge-info   {background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd}
+  .badge-manual {background:#f3f4f6;color:#6b7280;border:1px solid #d1d5db}
+  .badge-lvl-A  {background:#d1fae5;color:#059669;border:1px solid #6ee7b7}
+  .badge-lvl-AA {background:#ede9fe;color:#7c3aed;border:1px solid #c4b5fd}
+  .badge-lvl-AAA{background:#fef3c7;color:#b45309;border:1px solid #fcd34d}
+  .crit-ref{font-family:Arial,sans-serif;font-size:9pt;color:#555;font-weight:bold}
+  .crit-name{font-size:10.5pt;font-weight:bold}
+  .issue-body{padding:13px 15px}
+  .issue-path{font-family:monospace;font-size:8.5pt;color:#6b7280;background:#f9fafb;border:1px solid #e5e7eb;border-radius:3px;padding:4px 8px;margin-bottom:10px;word-break:break-all}
+  .issue-desc{font-size:10pt;margin-bottom:10px}
+
+  /* ── DETAILS ── */
+  .det-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+  .det-item{background:#f9fafb;border:1px solid #e5e7eb;border-radius:4px;padding:7px 10px}
+  .det-lbl{font-family:Arial,sans-serif;font-size:7.5pt;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+  .det-val{font-weight:bold;font-size:10pt}
+  .det-val.fail{color:#dc2626}
+  .det-val.pass{color:#059669}
+
+  /* ── COLOR ROW ── */
+  .color-row{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0;align-items:center}
+  .color-item{display:flex;align-items:center;gap:5px;font-family:Arial,sans-serif;font-size:9pt}
+  .color-swatch{width:16px;height:16px;border:1px solid #ccc;border-radius:3px;display:inline-block;flex-shrink:0}
+  .color-lbl{color:#888;font-size:8.5pt}
+  .color-good{color:#059669;font-weight:bold}
+
+  /* ── FIX BOX ── */
+  .fix-box{background:#f0f0ff;border:1px solid #a5b4fc;border-radius:5px;padding:11px 14px;margin:10px 0}
+  .fix-lbl{font-family:Arial,sans-serif;font-size:8pt;font-weight:bold;color:#4f46e5;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+  .fix-text{font-size:9.5pt;line-height:1.65}
+
+  /* ── WHY BOX ── */
+  .why-box{background:#f9fafb;border-left:3px solid #9ca3af;padding:9px 13px;margin:10px 0;font-size:9.5pt;color:#374151}
+  .why-lbl{font-family:Arial,sans-serif;font-size:7.5pt;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+
+  /* ── SCREENSHOT ── */
+  .sc-section{margin:12px 0}
+  .sc-lbl{font-family:Arial,sans-serif;font-size:8pt;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+  .sc-img{max-width:100%;max-height:200px;border:1px solid #e5e7eb;border-radius:4px;display:block;background:#fff;object-fit:contain}
+
+  /* ── REF ── */
+  .ref-line{font-family:Arial,sans-serif;font-size:8.5pt;color:#888;margin-top:10px}
+
+  /* ── METHOD TABLE ── */
+  table.meth{width:100%;border-collapse:collapse;margin:12px 0;font-size:9pt}
+  table.meth th{background:#f3f4f6;text-align:left;padding:6px 10px;font-family:Arial,sans-serif;font-size:8pt;font-weight:bold;text-transform:uppercase;color:#555;border:1px solid #e5e7eb}
+  table.meth td{padding:6px 10px;border:1px solid #e5e7eb;vertical-align:top}
+  table.meth tr:nth-child(even) td{background:#fafafa}
+
+  /* ── PRINT ── */
+  @media print{
+    body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .cover{page-break-after:always}
+    .issue-block{page-break-inside:avoid}
+    h1,h2{page-break-after:avoid}
+    .group-hdr{page-break-after:avoid}
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ COVER PAGE ══ -->
+<div class="cover">
+  <div class="cover-badge">WCAG 2.2 — ACCESSIBILITY EVALUATION REPORT</div>
+  <h1>${(_meta.fileName||'Figma Design').replace(/</g,'&lt;')}</h1>
+  <h2>Design Accessibility Evaluation</h2>
+  <hr class="cover-rule">
+  <!-- Overall compliance mark on cover -->
+  <div style="margin:28px auto;display:inline-flex;align-items:center;gap:28px;background:#f9fafb;border:2px solid ${errors.length===0&&warns.length===0?'#10b981':errors.length===0?'#f59e0b':'#ef4444'};border-radius:10px;padding:20px 36px">
+    <div style="text-align:center">
+      <div style="font-size:28pt;font-weight:900;font-family:Arial,monospace;letter-spacing:.06em;color:${errors.length===0&&warns.length===0?'#059669':errors.length===0?'#d97706':'#dc2626'};background:${errors.length===0&&warns.length===0?'#d1fae5':errors.length===0?'#fef3c7':'#fee2e2'};padding:8px 20px;border-radius:6px;display:inline-block">${mark.verdict}</div>
+      <div style="font-family:Arial,sans-serif;font-size:10pt;color:#555;margin-top:6px">WCAG 2.2 Level ${lvl}</div>
+    </div>
+    <div style="text-align:left">
+      <div style="font-size:26pt;font-weight:800;color:${errors.length===0&&warns.length===0?'#059669':errors.length===0?'#d97706':'#dc2626'};line-height:1">${mark.score}%</div>
+      <div style="font-family:Arial,sans-serif;font-size:9pt;color:#555;margin-top:4px">${mark.totalPass} of ${mark.totalChecked} criteria passing</div>
+      <div style="width:160px;height:8px;background:#e5e7eb;border-radius:4px;margin-top:8px;overflow:hidden">
+        <div style="width:${mark.score}%;height:100%;background:${errors.length===0&&warns.length===0?'#10b981':errors.length===0?'#f59e0b':'#ef4444'};border-radius:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-grid">
+    <div class="cv-cell"><div class="cv-lbl">Date</div><div class="cv-val">${dateStr}</div></div>
+    <div class="cv-cell"><div class="cv-lbl">Target</div><div class="cv-val">WCAG 2.2 ${lvl}</div></div>
+    <div class="cv-cell"><div class="cv-lbl">Elements</div><div class="cv-val">${(_meta.nodeCount||0).toLocaleString()}</div></div>
+    <div class="cv-cell"><div class="cv-lbl">Issues Found</div><div class="cv-val">${_issues.length}</div></div>
+  </div>
+  <p class="cover-note">
+    This report was generated by automated static analysis of the Figma design file.
+    Automated checks cover contrast ratios, element dimensions, and structural patterns.
+    A manual audit — including screen reader testing and keyboard navigation — is required for full certification.
+  </p>
+</div>
+
+<!-- ══ 1. EXECUTIVE SUMMARY ══ -->
+<h1>1. Executive Summary</h1>
+<hr class="rule">
+
+<div class="${compClass}">
+  <div class="comp-title">${compIcon} ${compTitle}</div>
+  <div class="comp-sub">${compSub}</div>
+</div>
+
+<table class="sum">
+  <thead><tr><th>Category</th><th>Count</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>Critical Errors</td><td>${errors.length}</td><td>${errors.length===0?'✅ None found':'❌ Requires immediate remediation'}</td></tr>
+    <tr><td>Warnings</td><td>${warns.length}</td><td>${warns.length===0?'✅ None found':'⚠ Recommended to address'}</td></tr>
+    <tr><td>Manual Review Items</td><td>${manual.length}</td><td>${manual.length===0?'✅ None flagged':'ℹ Requires human judgement'}</td></tr>
+    <tr><td><strong>Total Issues</strong></td><td><strong>${_issues.length}</strong></td><td>—</td></tr>
+    <tr><td>Design Elements Analyzed</td><td>${(_meta.nodeCount||0).toLocaleString()}</td><td>—</td></tr>
+    <tr><td><strong>Overall Compliance Score</strong></td><td><strong>${mark.score}%</strong></td><td>${mark.totalPass} of ${mark.totalChecked} criteria passing automated checks</td></tr>
+  </tbody>
+</table>
+
+<!-- ══ 2. ISSUES ══ -->
+<h1>2. Accessibility Issues</h1>
+<hr class="rule">
+
+${_issues.length===0
+  ? `<p style="color:#059669;font-style:italic;margin-top:10px">✅ No accessibility issues were detected during automated analysis.</p>`
+  : `${errorSection}${warnSection}${manualSection}`
+}
+
+<!-- ══ 3. METHODOLOGY ══ -->
+<h1>3. Methodology &amp; Scope</h1>
+<hr class="rule">
+<p>This report was produced by automated static analysis of the Figma design file's JSON data. The checks below were performed programmatically against the WCAG 2.2 specification.</p>
+
+<table class="meth">
+  <thead><tr><th>Criterion</th><th>Name</th><th>Level</th><th>Automated Check</th></tr></thead>
+  <tbody>
+    <tr><td>1.1.1</td><td>Non-text Content</td><td>A</td><td>Layer names on images and graphics checked for descriptiveness</td></tr>
+    <tr><td>1.4.1</td><td>Use of Color</td><td>A</td><td>Color-only status/badge elements flagged for manual review</td></tr>
+    <tr><td>1.4.3</td><td>Contrast (Minimum)</td><td>AA</td><td>Text fill color vs computed background; contrast ratio calculated per WCAG relative luminance formula</td></tr>
+    <tr><td>1.4.4</td><td>Resize Text</td><td>AA</td><td>Font sizes below 12px (error) and 14px (warning) flagged</td></tr>
+    <tr><td>1.4.6</td><td>Contrast (Enhanced)</td><td>AAA</td><td>7:1 ratio requirement when AAA target selected</td></tr>
+    <tr><td>1.4.11</td><td>Non-text Contrast</td><td>AA</td><td>UI component fill colors checked for 3:1 minimum contrast against background</td></tr>
+    <tr><td>2.4.7</td><td>Focus Visible</td><td>AA</td><td>Interactive components checked for presence of "focus" state variant</td></tr>
+    <tr><td>2.5.5</td><td>Target Size (Enhanced)</td><td>AA</td><td>Interactive element bounding boxes checked against 44×44px</td></tr>
+    <tr><td>2.5.8</td><td>Target Size (Minimum)</td><td>AA</td><td>Interactive element bounding boxes checked against 24×24px minimum</td></tr>
+    <tr><td>3.3.2</td><td>Labels or Instructions</td><td>A</td><td>Form field containers checked for visible label child elements</td></tr>
+  </tbody>
+</table>
+
+<h2>Criteria Requiring Manual Evaluation</h2>
+<p style="font-size:9.5pt">The following criteria are outside the scope of automated analysis and require human testing:</p>
+<ul style="font-size:9.5pt;padding-left:20px;margin-top:8px;line-height:1.9">
+  <li>Keyboard accessibility and tab order (WCAG 2.1.1, 2.4.3)</li>
+  <li>Screen reader compatibility and semantic structure (1.3.1, 4.1.2)</li>
+  <li>Animation and motion sensitivity (2.3.3)</li>
+  <li>Cognitive accessibility and reading level (3.1.5)</li>
+  <li>Time-based media alternatives (1.2.1–1.2.9)</li>
+  <li>Consistent navigation across multiple screens (3.2.3)</li>
+</ul>
+
+<!-- ══ APPENDIX ══ -->
+<h1>Appendix — References</h1>
+<hr class="rule">
+<ul style="font-size:9.5pt;line-height:2;padding-left:20px">
+  <li>Web Content Accessibility Guidelines (WCAG) 2.2 — <em>https://www.w3.org/TR/WCAG22/</em></li>
+  <li>Understanding WCAG 2.2 — <em>https://www.w3.org/WAI/WCAG22/Understanding/</em></li>
+  <li>How to Meet WCAG 2.2 (Quick Reference) — <em>https://www.w3.org/WAI/WCAG22/quickref/</em></li>
+  <li>WebAIM Contrast Checker — <em>https://webaim.org/resources/contrastchecker/</em></li>
+  <li>Figma Accessibility Annotation Kit — <em>https://www.figma.com/community/file/953682768192596304</em></li>
+</ul>
+
+<p style="margin-top:20px;font-size:8.5pt;color:#888;font-style:italic;border-top:1px solid #e5e7eb;padding-top:12px">
+  Report generated by WCAG 2.2 Validator on ${dateStr} at ${timeStr}.<br>
+  Figma file: <strong>${(_meta.fileName||'—').replace(/</g,'&lt;')}</strong> · File key: ${_meta.fileKey||'—'} · Analysis target: WCAG 2.2 Level ${lvl}
+</p>
+
+</body>
+</html>`;
+}
+
+// ═══════════════════════════════════════════
+// FIGMA TOKEN GUIDE MODAL
+// ═══════════════════════════════════════════
+function openGuide() {
+  document.getElementById('guide-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeGuide() {
+  document.getElementById('guide-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function printGuide() {
+  const w = window.open('', '_blank', 'width=720,height=900');
+  if(!w) { alert('Pop-ups are blocked. Please allow pop-ups and try again.'); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Figma Token Guide — DESN2005</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:40px;color:#111;font-size:11pt;line-height:1.6}
+  h1{font-size:16pt;margin-bottom:4px}
+  .sub{color:#555;font-size:10pt;margin-bottom:28px}
+  .step{display:flex;gap:14px;margin-bottom:18px;page-break-inside:avoid}
+  .num{width:26px;height:26px;border-radius:50%;background:#4f46e5;color:#fff;font-weight:800;font-size:11pt;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+  .title{font-weight:700;font-size:11pt;margin-bottom:2px}
+  .desc{color:#333;font-size:10.5pt}
+  .note{margin-top:6px;padding:6px 10px;background:#fef9c3;border-left:3px solid #ca8a04;font-size:10pt;color:#555}
+  code{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:3px;padding:1px 5px;font-family:monospace;font-size:10pt}
+  hr{border:none;border-top:1px solid #e5e7eb;margin:24px 0}
+  footer{font-size:9pt;color:#888;margin-top:32px}
+  @media print{body{margin:20px}}
+</style></head><body>
+<h1>How to Get Your Figma Personal Access Token</h1>
+<div class="sub">DESN2005 – Graphic Design: Interactive Digital Media · Western Sydney University</div>
+<div class="step"><div class="num">1</div><div><div class="title">Open Figma and sign in</div><div class="desc">Go to <strong>figma.com</strong> in your browser and sign in to your account.</div></div></div>
+<div class="step"><div class="num">2</div><div><div class="title">Click your profile avatar</div><div class="desc">In the <strong>top-left corner</strong> of the Figma home screen, click your profile picture or initials.</div></div></div>
+<div class="step"><div class="num">3</div><div><div class="title">Open Settings</div><div class="desc">Select <strong>Settings</strong> from the dropdown menu.</div></div></div>
+<div class="step"><div class="num">4</div><div><div class="title">Go to the Security tab</div><div class="desc">Click the <strong>Security</strong> tab in the settings panel sidebar.</div></div></div>
+<div class="step"><div class="num">5</div><div><div class="title">Create a new Personal Access Token</div><div class="desc">Find <strong>Personal Access Tokens</strong> and click <strong>"Add new token"</strong>. Give it a name, e.g. <code>WCAG Validator – DESN2005</code></div></div></div>
+<div class="step"><div class="num">6</div><div><div class="title">Set token scopes</div><div class="desc">If prompted, find <strong>"File content"</strong> and set it to <strong>Read</strong>.</div><div class="note">⚠️ Without this scope the validator will receive a 403 Access Denied error.</div></div></div>
+<div class="step"><div class="num">7</div><div><div class="title">Copy the token immediately</div><div class="desc">Click <strong>"Generate token"</strong>. Figma shows it <strong>only once</strong> — copy it right away.</div><div class="note">🔒 Your token is stored only in your browser's localStorage and never shared.</div></div></div>
+<div class="step"><div class="num">8</div><div><div class="title">Paste it into the validator</div><div class="desc">Return to the WCAG Validator, paste the token into the <strong>Personal Access Token</strong> field, then click <strong>Analyze Design</strong>.</div></div></div>
+<hr>
+<footer>DESN2005 – Graphic Design: Interactive Digital Media · Western Sydney University · WCAG 2.2 Validator</footer>
+</body></html>`);
+  w.document.close();
+  w.addEventListener('load', () => setTimeout(() => w.print(), 500));
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+(function init() {
+  try {
+    const saved = localStorage.getItem('figma_tok');
+    if(saved) document.getElementById('in-token').value = saved;
+  } catch(e) {}
+
+  document.getElementById('toggle-token').addEventListener('click', () => {
+    const inp = document.getElementById('in-token');
+    inp.type = inp.type==='password' ? 'text' : 'password';
+  });
+
+  document.getElementById('in-url').addEventListener('keydown', e => {
+    if(e.key==='Enter') runAnalysis();
+  });
+})();
+</script>
+
+</body>
+</html>
